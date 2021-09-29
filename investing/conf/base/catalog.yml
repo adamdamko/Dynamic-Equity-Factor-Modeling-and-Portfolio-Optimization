@@ -1,0 +1,111 @@
+# Here you can define all your data sets by using simple YAML syntax.
+#
+# Documentation for this file format can be found in "The Data Catalog"
+# Link: https://kedro.readthedocs.io/en/stable/05_data/01_data_catalog.html
+
+# SimFin 'us-companies' dataset
+companies:
+  type: pandas.SQLQueryDataSet
+  credentials: investment_credentials
+  sql: select * from investments.fundamentals."us-companies"
+
+# SimFin 'industries' dataset
+industries:
+  type: pandas.SQLQueryDataSet
+  credentials: investment_credentials
+  sql: select * from investments.fundamentals.industries
+
+# SimFin 'us-shareprices-daily' dataset
+prices:
+  type: pandas.SQLQueryDataSet
+  credentials: investment_credentials
+  sql: select * from investments.fundamentals."us-shareprices-daily"
+
+# Joined data from companies, industries, and prices
+#raw_joined_data:
+#  type: pandas.CSVDataSet
+#  filepath: data/02_intermediate/raw_joined_data.csv
+
+# Cleaned data from raw_joined_data
+#intro_cleaned_data:
+#  type: pandas.CSVDataSet
+#  filepath: data/02_intermediate/intro_cleaned_data.csv
+
+# Market cap data with market cap categorical variable
+#market_cap_data:
+#  type: pandas.CSVDataSet
+#  filepath: data/03_primary/market_cap_data.csv
+
+# Market cap data with market cap categorical variable and removed values
+#filtered_data:
+#  type: pandas.CSVDataSet
+#  filepath: data/03_primary/filtered_data.csv
+
+# Market cap data with market cap categorical variable, removed values, and removed dates
+#filtered_dates_data:
+#  type: pandas.CSVDataSet
+#  filepath: data/03_primary/filtered_dates_data.csv
+
+# Filtered data with returns series
+#returns_data:
+#  type: pandas.CSVDataSet
+#  filepath: data/04_feature/returns_data.csv
+
+# Rolling values
+#rolling_values_data:
+#  type: pandas.CSVDataSet
+#  filepath: data/04_feature/rolling_values_data.csv
+
+# Market schedule
+#market_schedule_data:
+#  type: pandas.CSVDataSet
+#  filepath: data/04_feature/market_schedule_data.csv
+
+# Lagged rolling returns data
+#lagged_rolling_returns_data:
+#  type: pandas.CSVDataSet
+#  filepath: data/04_feature/lagged_rolling_returns_data.csv
+
+# Monthly data
+#monthly_data:
+#  type: pandas.CSVDataSet
+#  filepath: data/04_feature/monthly_data.csv
+
+# Momentum data
+#momentum_data:
+#  type: pandas.CSVDataSet
+#  filepath: data/04_feature/momentum_data.csv
+
+# Modeling data
+modeling_data:
+  type: pandas.CSVDataSet
+  filepath: data/05_model_input/modeling_data.csv
+  load_args:
+    dtype: { 'sector': category,
+             'market_cap_cat': category }
+
+# Holdout data
+holdout_data:
+  type: pandas.CSVDataSet
+  filepath: data/05_model_input/holdout_data.csv
+  load_args:
+    dtype: { 'sector': category,
+             'market_cap_cat': category }
+
+# Train X data
+train_x_data:
+  type: pandas.CSVDataSet
+  filepath: data/05_model_input/train_x_data.csv
+  load_args:
+    dtype: {'sector': category,
+            'market_cap_cat': category}
+
+# Train y data
+train_y_data:
+  type: pandas.CSVDataSet
+  filepath: data/05_model_input/train_y_data.csv
+
+# Time-series split list
+time_series_split_list:
+  type: pickle.PickleDataSet
+  filepath: data/05_model_input/time_series_split_list.pickle
