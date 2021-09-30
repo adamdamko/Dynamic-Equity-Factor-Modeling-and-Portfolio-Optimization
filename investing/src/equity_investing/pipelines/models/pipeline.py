@@ -1,7 +1,7 @@
 # This is the pipeline for models.
 
 from kedro.pipeline import Pipeline, node
-from .nodes import TrainTestValidation
+from .nodes import TrainTestValidation, HyperparameterTuning
 
 
 def create_pipeline(**kwargs):
@@ -30,6 +30,13 @@ def create_pipeline(**kwargs):
                 inputs=['modeling_data'],
                 outputs='time_series_split_list',
                 name='time_series_split_list_node',
+            ),
+            node(
+                func=HyperparameterTuning.train_cv_lgbm,
+                inputs=['train_x_data', 'train_y_data', 'time_series_split_list', 'params:lgbm_static_params',
+                        'params:lgbm_fine_tune_params'],
+                outputs='lgbm_fine_cv_model',
+                name='lgbm_fine_cv_model_node',
             ),
         ]
     )

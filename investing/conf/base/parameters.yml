@@ -1,0 +1,34 @@
+## THIS FILE HOLDS ALL MODEL HYPERPARAMETERS
+
+# LightGBM: static parameters
+lgbm_static_params:
+  boosting_type: 'dart'
+  extra_trees: True
+  n_jobs: 23
+  # random_state=377507,  # lowest std random_state from testing
+  # bagging_freq=10 for future
+
+
+# LightGBM: coarse tuning parameters
+lgbm_coarse_tune_params:
+  n_estimators: np.linspace(50, 1750, 25, dtype=int)  # alias: num_iterations
+  learning_rate: np.round(np.linspace(0.01, 0.05, 25), 3)
+  max_depth: np.linspace(200, 750, 25, dtype=int)
+  reg_lambda: np.round(np.linspace(5, 20, 25), 3)  # alias: lambda_l2
+  num_leaves: np.linspace(2, 200, 25, dtype=int)
+  max_bin: np.linspace(30, 350, 25, dtype=int)
+#  bagging_fraction: np.linspace(0.5, 1, 26)
+#  min_data_in_leaf: np.linspace(2, 100, 50, dtype=int)
+#  path_smooth: np.linspace(0, 10, 21)
+
+# LightGBM: fine-tuning parameters
+lgbm_fine_tune_params:
+  n_estimators: np.linspace(50, 350, 25, dtype=int)  # alias: num_iterations
+  learning_rate: np.round(np.linspace(0.01, 0.02, 25), 3)
+  max_depth: np.linspace(100, 350, 25, dtype=int)
+  reg_lambda: np.round(np.linspace(5, 20, 25), 3)  # alias: lambda_l2
+  num_leaves: np.linspace(2, 50, 25, dtype=int)
+  max_bin: np.linspace(50, 500, 25, dtype=int)
+#  bagging_fraction: np.linspace(0.5, 1, 26)
+#  min_data_in_leaf: np.linspace(2, 100, 50, dtype=int)
+#  path_smooth: np.linspace(0, 10, 21)
