@@ -2,7 +2,14 @@
 # Import libraries
 import pandas as pd
 import numpy as np
+import logging
+import lightgbm as lgb
+import matplotlib.pyplot as plt
+from typing import Dict
+from sklearn.model_selection import RandomizedSearchCV
+from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
+from sklearn.compose import TransformedTargetRegressor
 
 
 class TrainTestValidation:
@@ -117,3 +124,74 @@ class TrainTestValidation:
         split_list = [[n, m] for n, m in zip(train_list, test_list)]
 
         return split_list
+
+
+class HyperparameterTuning:
+    """
+    The HyperparameterTuning class cross-validates across the time_series_splits
+    to optimize hyperparameters for the LightGBM model.
+    """
+    @staticmethod
+    def train_cv_lgbm(train_x_data: pd.DataFrame, train_y_data: pd.DataFrame, time_series_split_list: list,
+                      params_static: Dict, params: Dict):
+        """
+        This performs cross-validation for hyperparameter tuning.
+
+        Args:
+            train_x_data:
+            train_y_data:
+            time_series_split_list:
+            params_static: Static parameters defined in parameters.yml
+            params: Parameters defined in parameters.yml
+
+        Returns:
+            Model object.
+
+        """
+        # Make categorical vars as pd.Categorical
+        X_train = train_x_data.copy()
+        y_train = train_y_data.copy()
+        tscv = time_series_split_list.copy()
+        # Train X data
+        X_train.loc[:, 'sector'] = X_train.loc[:, 'sector'].astype('category')
+        X_train.loc[:, 'market_cap_cat'] = X_train.loc[:, 'market_cap_cat'].astype('category')
+        # LIGHTGBM PIPELINE
+        # Instantiate regressor
+        lgbm = lgb.LGBMRegressor(params_static['boosting_type'],
+                                 params_static['extra_trees'],
+                                 params_static['n_jobs']
+                                 )
+
+        # Create the parameter dictionary: params
+        lgbm_param_grid = {params['n_estimators'],
+                           params['learning_rate'],
+                           params['max_depth'],
+                           params['reg_lambda'],
+                           params['num_leaves'],
+                           params['max_bin']
+                           # params['bagging_fraction'],
+                           # params['min_data_in_leaf'],
+                           # params['path_smooth']
+                           }
+
+        # Setup the pipeline steps: steps
+        lgbm_steps = [("lgbm_model", lgbm)]
+
+        # Create the pipeline: xgb_pipeline
+        lgbm_pipeline = Pipeline(lgbm_steps)
+
+        # Perform random search: grid_mae
+        lgbm_randomized = TransformedTargetRegressor(RandomizedSearchCV(estimator=lgbm_pipeline,
+                                                                        param_distributions=lgbm_param_grid,
+                                                                        n_iter=100,
+                                                                        scoring='neg_mean_absolute_percentage_error',
+                                                                        cv=tscv,
+                                                                        verbose=10,
+                                                                        refit=True
+                                                                        ),
+                                                     transformer=StandardScaler()
+                                                     )
+        # Fit the estimator
+        lgbm_randomized.fit(X_train, y_train)  # categorical_feature is auto
+
+        return lgbm_randomized

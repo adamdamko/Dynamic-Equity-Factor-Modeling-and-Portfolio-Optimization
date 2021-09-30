@@ -1,7 +1,7 @@
 # This is the chosen modeling method (Lightgbm) file.
-# Comments on hyperparameters:
-#   n_estimators (num_iterations) : performs better 150 < n_estimators < 300
-#   learning_rate: performs best at 0.01 or less?
+# Comments on hyperparameters from initial 'coarse' tuning:
+#   n_estimators (num_iterations) : best performance n_estimators < 300
+#   learning_rate: best performance at 0.01 < learning_rate < 0.02
 #             - **Tradeoff between learning rate and n_estimators. Smaller learning_rate
 #               seems to improve performance (<0.01) but requires more n_estimators to
 #               to reach convergence. But performance improves greatly with fewer
@@ -19,7 +19,7 @@
 #   extra_trees: used to reduce over-fitting
 #   dart: seems to improve performance
 #   random_state: after testing, random_state is relatively stable
-#             - choose random_state 377507 for final model (lowest std in testing)
+#             - choose random_state *** for final model (lowest std in testing)
 
 
 #%% Import libraries
@@ -109,7 +109,7 @@ def visualize_hyperparameter(name):
     plt.gca().set(xlabel='{}'.format(name),
                   ylabel='MAPE',
                   title='MAPE for different {}s'.format(name))
-    plt.gca().set_ylim([-6, 0])
+    plt.gca().set_ylim([-4, 0])
     plt.show()
 
 
@@ -169,7 +169,7 @@ lgbm_seed_cv_results = pd.DataFrame(lgbm_seed_randomized.regressor_.cv_results_)
 
 #%% Save model cv's
 # Initial model cv
-# joblib.dump(lgbm_randomized, 'lgbm_initial_cv.pkl')
+# joblib.dump(lgbm_randomized, 'investing/data/06_models/lgbm_coarse_cv_model.pkl')
 # 2nd model cv
 # joblib.dump(lgbm_randomized, 'models/lgbm_2nd_cv.pkl')
 # 3rd model cv
