@@ -155,24 +155,16 @@ class HyperparameterTuning:
         # Train X data
         X_train.loc[:, 'sector'] = X_train.loc[:, 'sector'].astype('category')
         X_train.loc[:, 'market_cap_cat'] = X_train.loc[:, 'market_cap_cat'].astype('category')
+
         # LIGHTGBM PIPELINE
         # Instantiate regressor
-        lgbm = lgb.LGBMRegressor(params_static['boosting_type'],
-                                 params_static['extra_trees'],
-                                 params_static['n_jobs']
+        lgbm = lgb.LGBMRegressor(boosting_type=params_static['boosting_type'],
+                                 extra_trees=params_static['extra_trees'],
+                                 n_jobs=params_static['n_jobs']
                                  )
 
         # Create the parameter dictionary: params
-        lgbm_param_grid = {params['n_estimators'],
-                           params['learning_rate'],
-                           params['max_depth'],
-                           params['reg_lambda'],
-                           params['num_leaves'],
-                           params['max_bin']
-                           # params['bagging_fraction'],
-                           # params['min_data_in_leaf'],
-                           # params['path_smooth']
-                           }
+        lgbm_param_grid = params
 
         # Setup the pipeline steps: steps
         lgbm_steps = [("lgbm_model", lgbm)]
@@ -183,7 +175,7 @@ class HyperparameterTuning:
         # Perform random search: grid_mae
         lgbm_randomized = TransformedTargetRegressor(RandomizedSearchCV(estimator=lgbm_pipeline,
                                                                         param_distributions=lgbm_param_grid,
-                                                                        n_iter=100,
+                                                                        n_iter=params_static['n_iter'],
                                                                         scoring='neg_mean_absolute_percentage_error',
                                                                         cv=tscv,
                                                                         verbose=10,

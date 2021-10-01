@@ -28,6 +28,7 @@ import numpy as np
 import joblib
 import lightgbm as lgb
 import matplotlib.pyplot as plt
+from pandas_profiling import ProfileReport
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
@@ -42,6 +43,11 @@ y_train = pd.read_csv('C:/Users/damko/PycharmProjects/Equity_Investing/investing
 tscv = pd.read_pickle(
     'C:/Users/damko/PycharmProjects/Equity_Investing/investing/data/05_model_input/time_series_split_list.pickle'
 )
+
+#%% EDA
+# profile = ProfileReport(mod_data, title='Modeling Data Report')
+profile.to_file(
+    'C:/Users/damko/PycharmProjects/Equity_Investing/investing/data/05_model_input/model_data_eda.html')
 
 #%% Make categorical vars as pd.Categorical
 # Train X data
@@ -105,7 +111,7 @@ lgbm_cv_results = pd.DataFrame(lgbm_randomized.regressor_.cv_results_)
 
 
 def visualize_hyperparameter(name):
-    plt.scatter(lgbm_cv_results[name], lgbm_cv_results['mean_test_score'], c=['blue'])
+    plt.scatter(lgbm_coarse_cv_model_results[name], lgbm_coarse_cv_model_results['mean_test_score'], c=['blue'])
     plt.gca().set(xlabel='{}'.format(name),
                   ylabel='MAPE',
                   title='MAPE for different {}s'.format(name))
@@ -176,10 +182,16 @@ lgbm_seed_cv_results = pd.DataFrame(lgbm_seed_randomized.regressor_.cv_results_)
 # joblib.dump(lgbm_randomized, 'models/lgbm_3rd_cv.pkl')
 
 #%% Load model cv's
-lgbm_2nd_cv = joblib.load('models/lgbm_2nd_cv.pkl')
+lgbm_coarse_cv_model = joblib.load(
+    'C:/Users/damko/PycharmProjects/Equity_Investing/investing/data/06_models/lgbm_coarse_cv_model.pkl'
+)
+
+# pd.read_pickle(
+#     'C:/Users/damko/PycharmProjects/Equity_Investing/investing/data/05_model_input/time_series_split_list.pickle'
+# )
 
 #%% Look at model cv results
-lgbm_2nd_cv_results = pd.DataFrame(lgbm_2nd_cv.regressor_.cv_results_)
+lgbm_coarse_cv_model_results = pd.DataFrame(lgbm_coarse_cv_model.regressor_.cv_results_)
 
 #%%
 testing = X_train.loc[X_train.index.isin(tscv[2]), :]

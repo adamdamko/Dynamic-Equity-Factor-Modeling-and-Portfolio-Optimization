@@ -79,7 +79,7 @@ prices:
 # Modeling data
 modeling_data:
   type: pandas.CSVDataSet
-  filepath: data/05_model_input/modeling_data.csv
+  filepath: data/04_feature/modeling_data.csv
   load_args:
     dtype: { 'sector': category,
              'market_cap_cat': category }
@@ -110,7 +110,22 @@ time_series_split_list:
   type: pickle.PickleDataSet
   filepath: data/05_model_input/time_series_split_list.pickle
 
-# LightGBM fine model tune cv
+# Exploratory models: random forest
+rfr_model:
+  type: pickle.PickleDataSet
+  filepath: data/06_models/rfr_model.pickle
+
+# Exploratory models: xgboost
+xgb_model:
+  type: pickle.PickleDataSet
+  filepath: data/06_models/xgb_model.pickle
+
+## LightGBM coarse best model tune cv
+#lgbm_coarse_best_params_model:
+#  type: pickle.PickleDataSet
+#  filepath: data/06_models/lgbm_coarse_best_params_model.pickle
+
+# LightGBM fine-tune cv
 lgbm_fine_cv_model:
   type: pickle.PickleDataSet
   filepath: data/06_models/lgbm_fine_cv_model.pickle

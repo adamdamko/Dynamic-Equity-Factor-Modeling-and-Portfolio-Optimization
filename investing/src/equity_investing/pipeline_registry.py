@@ -32,6 +32,7 @@ from kedro.pipeline import Pipeline
 
 from equity_investing.pipelines import data_processing as dp
 from equity_investing.pipelines import feature_engineering as fe
+from equity_investing.pipelines import models_ml_exploratory as me
 from equity_investing.pipelines import models as md
 
 
@@ -43,11 +44,22 @@ def register_pipelines() -> Dict[str, Pipeline]:
     """
     data_processing_pipeline = dp.create_pipeline()
     feature_engineering_pipeline = fe.create_pipeline()
-    models_pipeline = md.create_pipeline()
+    train_test_split_pipeline = md.create_test_train_validation_sets_pipeline()
+    exploratory_models_pipeline = me.create_exploratory_models_pipeline()
+    hyperparameter_tuning_pipeline = md.create_hyperparameter_tuning_pipeline()
 
     return {
-        "__default__": data_processing_pipeline + feature_engineering_pipeline + models_pipeline,
-        "dp": data_processing_pipeline,
-        "fe": feature_engineering_pipeline,
-        "md": models_pipeline,
+        "data_processing": data_processing_pipeline,
+        "feature_engineering": feature_engineering_pipeline,
+        "train_test_splits": train_test_split_pipeline,
+        "hyperparameter_tuning": hyperparameter_tuning_pipeline,
+        "__default__": data_processing_pipeline + feature_engineering_pipeline +
+        train_test_split_pipeline + hyperparameter_tuning_pipeline,
+
+        # Default pipeline with EDA html files
+        "default_eda": data_processing_pipeline + feature_engineering_pipeline +
+        train_test_split_pipeline + hyperparameter_tuning_pipeline,
+        # Full pipeline (takes long to run)
+        "full_pipeline": data_processing_pipeline + feature_engineering_pipeline +
+        train_test_split_pipeline + exploratory_models_pipeline,
     }

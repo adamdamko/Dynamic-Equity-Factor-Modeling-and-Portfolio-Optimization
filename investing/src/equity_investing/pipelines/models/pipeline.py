@@ -4,7 +4,7 @@ from kedro.pipeline import Pipeline, node
 from .nodes import TrainTestValidation, HyperparameterTuning
 
 
-def create_pipeline(**kwargs):
+def create_test_train_validation_sets_pipeline(**kwargs):
     return Pipeline(
         [
             node(
@@ -31,6 +31,13 @@ def create_pipeline(**kwargs):
                 outputs='time_series_split_list',
                 name='time_series_split_list_node',
             ),
+        ]
+    )
+
+
+def create_hyperparameter_tuning_pipeline(**kwargs):
+    return Pipeline(
+        [
             node(
                 func=HyperparameterTuning.train_cv_lgbm,
                 inputs=['train_x_data', 'train_y_data', 'time_series_split_list', 'params:lgbm_static_params',
