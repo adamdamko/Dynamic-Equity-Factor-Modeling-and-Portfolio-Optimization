@@ -36,6 +36,7 @@ from equity_investing.pipelines import models_ml_exploratory as me
 from equity_investing.pipelines import models as md
 
 
+# Run the registry
 def register_pipelines() -> Dict[str, Pipeline]:
     """Register the project's pipelines.
 
