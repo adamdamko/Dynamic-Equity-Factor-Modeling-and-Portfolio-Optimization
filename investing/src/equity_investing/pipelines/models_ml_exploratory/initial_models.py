@@ -65,8 +65,7 @@ print("Lowest MAPE found: ", np.abs(rfr_randomized.regressor_.best_score_))
 #%% XGBOOST
 # XGBOOST PIPELINE
 # Instantiate regressor
-gbm = xgb.XGBRegressor(tree_method='hist',
-                       booster='gbtree',
+gbm = xgb.XGBRegressor(booster='gbtree',
                        )
 
 # Create the parameter dictionary: params
