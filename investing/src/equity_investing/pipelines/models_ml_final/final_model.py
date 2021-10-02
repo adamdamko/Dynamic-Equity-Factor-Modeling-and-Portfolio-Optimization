@@ -19,7 +19,7 @@
 #   extra_trees: used to reduce over-fitting
 #   dart: seems to improve performance
 #   random_state: after testing, random_state is relatively stable
-#             - choose random_state *** for final model (lowest std in testing)
+#             - choose random_state 126502 for final model (lowest std in testing)
 
 
 #%% Import libraries
@@ -28,16 +28,15 @@ import numpy as np
 import joblib
 import lightgbm as lgb
 import matplotlib.pyplot as plt
-from pandas_profiling import ProfileReport
+import shap
+# from pandas_profiling import ProfileReport
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.compose import TransformedTargetRegressor
 
 #%% Get train data and splits
-mod_data = pd.read_csv(
-    'C:/Users/damko/PycharmProjects/Equity_Investing/investing/data/05_model_input/modeling_data.csv'
-)
+
 X_train = pd.read_csv('C:/Users/damko/PycharmProjects/Equity_Investing/investing/data/05_model_input/train_x_data.csv')
 y_train = pd.read_csv('C:/Users/damko/PycharmProjects/Equity_Investing/investing/data/05_model_input/train_y_data.csv')
 tscv = pd.read_pickle(
@@ -46,8 +45,8 @@ tscv = pd.read_pickle(
 
 #%% EDA
 # profile = ProfileReport(mod_data, title='Modeling Data Report')
-profile.to_file(
-    'C:/Users/damko/PycharmProjects/Equity_Investing/investing/data/05_model_input/model_data_eda.html')
+# profile.to_file(
+#     'C:/Users/damko/PycharmProjects/Equity_Investing/investing/data/05_model_input/model_data_eda.html')
 
 #%% Make categorical vars as pd.Categorical
 # Train X data
@@ -95,6 +94,7 @@ lgbm_randomized = TransformedTargetRegressor(RandomizedSearchCV(estimator=lgbm_p
 lgbm_randomized.fit(X_train, y_train)  # categorical_feature is auto
 
 #%% Compute metrics
+lgbm_randomized = lgbm_fine_cv_model
 # Print the best parameters and lowest MAE
 print("Best estimators found: ", lgbm_randomized.regressor_.best_estimator_)
 print("Best parameters found: ", lgbm_randomized.regressor_.best_params_)
@@ -111,7 +111,7 @@ lgbm_cv_results = pd.DataFrame(lgbm_randomized.regressor_.cv_results_)
 
 
 def visualize_hyperparameter(name):
-    plt.scatter(lgbm_coarse_cv_model_results[name], lgbm_coarse_cv_model_results['mean_test_score'], c=['blue'])
+    plt.scatter(lgbm_cv_results[name], lgbm_cv_results['mean_test_score'], c=['blue'])
     plt.gca().set(xlabel='{}'.format(name),
                   ylabel='MAPE',
                   title='MAPE for different {}s'.format(name))
@@ -126,20 +126,30 @@ param_list = ['param_lgbm_model__n_estimators',
               'param_lgbm_model__num_leaves',
               'param_lgbm_model__max_bin']
 
+
 for param in param_list:
     visualize_hyperparameter(param)
 
+#%%
+fig, axes = plt.subplots(6)
+for ax, param in zip(axes, param_list):
+    ax.scatter(lgbm_cv_results[param], lgbm_cv_results['mean_test_score'], c=['blue'])
+    ax.set(xlabel='{}'.format(param),
+           ylabel='MAPE',
+           title='MAPE for different {}s'.format(param))
 
+
+plt.show()
 #%% LIGHTGBM RANDOM SEED CONSISTENCY TESTING
 # Using best hyperparameters from old tests
 # LIGHTGBM PIPELINE
 # Instantiate regressor
-lgbm_seed = lgb.LGBMRegressor(n_estimators=145,
-                              learning_rate=0.011,
-                              reg_lambda=5.5,
-                              num_leaves=5,
-                              max_depth=205,
-                              max_bin=130,
+lgbm_seed = lgb.LGBMRegressor(n_estimators=140,
+                              learning_rate=0.012,
+                              reg_lambda=10.625,
+                              num_leaves=6,
+                              max_depth=350,
+                              max_bin=460,
                               boosting_type='dart',
                               extra_trees=True,
                               n_jobs=23)  # bagging_freq=10 for future
@@ -177,13 +187,13 @@ lgbm_seed_cv_results = pd.DataFrame(lgbm_seed_randomized.regressor_.cv_results_)
 # Initial model cv
 # joblib.dump(lgbm_randomized, 'investing/data/06_models/lgbm_coarse_cv_model.pkl')
 # 2nd model cv
-# joblib.dump(lgbm_randomized, 'models/lgbm_2nd_cv.pkl')
+# joblib.dump(lgbm_randomized, 'models_ml_final/lgbm_2nd_cv.pkl')
 # 3rd model cv
-# joblib.dump(lgbm_randomized, 'models/lgbm_3rd_cv.pkl')
+# joblib.dump(lgbm_randomized, 'models_ml_final/lgbm_3rd_cv.pkl')
 
 #%% Load model cv's
-lgbm_coarse_cv_model = joblib.load(
-    'C:/Users/damko/PycharmProjects/Equity_Investing/investing/data/06_models/lgbm_coarse_cv_model.pkl'
+lgbm_fine_cv_model = joblib.load(
+    'C:/Users/damko/PycharmProjects/Equity_Investing/investing/data/06_models/lgbm_fine_cv_model.pickle'
 )
 
 # pd.read_pickle(
@@ -193,5 +203,8 @@ lgbm_coarse_cv_model = joblib.load(
 #%% Look at model cv results
 lgbm_coarse_cv_model_results = pd.DataFrame(lgbm_coarse_cv_model.regressor_.cv_results_)
 
-#%%
-testing = X_train.loc[X_train.index.isin(tscv[2]), :]
+#%% SHAP
+explainer = shap.TreeExplainer(lgbm_fine_cv_model)
+shap_values = explainer.shap_values(X_train)
+
+# shap.force_plot(explainer.expected_value[1], shap_values[1][0,:], X_train.iloc[0, :])

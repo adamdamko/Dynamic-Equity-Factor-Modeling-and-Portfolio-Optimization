@@ -5,7 +5,7 @@
 # and Lightgbm. In initial testing Lightgbm showed slightly better
 # performance in cross-validation and was much faster. Therefore,
 # Lightgbm was chosen for the final modeling technique. To play with
-# the below models again dummy variables will have to be created
+# the below models_ml_final again dummy variables will have to be created
 # for the data sets as Lightgbm has it's own handling of categorical
 # variables and the data sets were changed to not create dummy
 # variables.
@@ -31,7 +31,7 @@ from sklearn.compose import TransformedTargetRegressor
 class ExploratoryModels:
     """
     The ExploratoryModels class cross-validates across the time_series_splits
-    to optimize hyperparameters for competing models. This is basic testing
+    to optimize hyperparameters for competing models_ml_final. This is basic testing
     to decide on a final modeling method.
     """
     @staticmethod

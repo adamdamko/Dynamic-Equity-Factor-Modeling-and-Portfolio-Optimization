@@ -6,24 +6,66 @@ lgbm_static_params:
     extra_trees: True
     n_jobs: 23
     n_iter: 500
-    # random_state=377507,  # lowest std random_state from testing
-    # bagging_freq=10 for future
+
+# LightGBM features
+lgbm_features:
+      - sector
+      - market_cap_cat
+      - roll_30day_med_vol
+      - mom_1_0
+      - mom_3_0
+      - mom_6_0
+      - mom_12_0
+      - mom_1_0_L1
+      - mom_1_0_L2
+      - mom_1_0_L3
+      - mom_1_0_L4
+      - mom_1_0_L5
+      - mom_1_0_L6
+      - mom_1_0_L7
+      - mom_1_0_L8
+      - mom_1_0_L9
+      - mom_1_0_L10
+      - mom_1_0_L11
+      - mom_1_0_L12
+      - mom_1_0_L13
+      - mom_1_0_L14
+      - mom_1_0_L15
+      - mom_1_0_L16
+      - mom_1_0_L17
+      - mom_1_0_L18
+      - mom_1_0_L19
+      - mom_1_0_L20
+      - mom_1_0_L21
+      - mom_1_0_L22
+      - mom_1_0_L23
+      - mom_1_0_L24
 
 
 ## LIGHTGBM COARSE TUNING
-# LightGBM: coarse tuning parameters (not used in kedro pipeline)
+# LightGBM: coarse tuning parameters
 lgbm_coarse_tune_params:
-    lgbm_model__n_estimators: np.linspace(50, 1750, 25, dtype=int)  # alias: num_iterations
-    lgbm_model__learning_rate: np.round(np.linspace(0.01, 0.05, 25), 3)
-    lgbm_model__max_depth: np.linspace(200, 750, 25, dtype=int)
-    lgbm_model__reg_lambda: np.round(np.linspace(5, 20, 25), 3)  # alias: lambda_l2
-    lgbm_model__num_leaves: np.linspace(2, 200, 25, dtype=int)
-    lgbm_model__max_bin: np.linspace(30, 350, 25, dtype=int)
+    lgbm_model__n_estimators: [  50,  120,  191,  262,  333,  404,  475,  545,  616,  687,  758,
+        829,  900,  970, 1041, 1112, 1183, 1254, 1325, 1395, 1466, 1537,
+       1608, 1679, 1750]
+    lgbm_model__learning_rate: [0.01 , 0.012, 0.013, 0.015, 0.017, 0.018, 0.02 , 0.022, 0.023,
+       0.025, 0.027, 0.028, 0.03 , 0.032, 0.033, 0.035, 0.037, 0.038,
+       0.04 , 0.042, 0.043, 0.045, 0.047, 0.048, 0.05 ]
+    lgbm_model__max_depth: [200, 222, 245, 268, 291, 314, 337, 360, 383, 406, 429, 452, 475,
+       497, 520, 543, 566, 589, 612, 635, 658, 681, 704, 727, 750]
+    lgbm_model__reg_lambda: [5.0, 5.625, 6.25, 6.875, 7.5, 8.125, 8.75, 9.375,
+       10.0, 10.625, 11.25, 11.875, 12.5, 13.125, 13.75, 14.375,
+       15.0, 15.625, 16.25, 16.875, 17.5, 18.125, 18.75 , 19.375,
+       20.0]
+    lgbm_model__num_leaves: [  2,  10,  18,  26,  35,  43,  51,  59,  68,  76,  84,  92, 101,
+       109, 117, 125, 134, 142, 150, 158, 167, 175, 183, 191, 200]
+    lgbm_model__max_bin: [ 30,  43,  56,  70,  83,  96, 110, 123, 136, 150, 163, 176, 190,
+       203, 216, 230, 243, 256, 270, 283, 296, 310, 323, 336, 350]
 #  bagging_fraction: np.linspace(0.5, 1, 26)
 #  min_data_in_leaf: np.linspace(2, 100, 50, dtype=int)
 #  path_smooth: np.linspace(0, 10, 21)
 
-# LightGBM best coarse tuning parameters
+# LightGBM best coarse tuning parameters (not used in any pipeline)
 lgbm_coarse_best_params:
     n_estimators: 262
     learning_rate: 0.012
@@ -55,8 +97,21 @@ lgbm_fine_tune_params:
                           420, 430, 440, 450, 460, 470, 480, 490, 500]
 
 
+### Model hyperparameters ###
+# LightGBM best fine-tuning parameters
+lgbm_fine_best_params:
+    n_estimators: 140
+    learning_rate: 0.012
+    max_depth: 350
+    reg_lambda: 10.625
+    num_leaves: 6
+    max_bin: 460
+    random_state: 126502
+### Model hyperparameters ###
 
-## THIS HOLDS ALL MODELS_ML_EXPLORATORY HYPERPARAMETERS
+
+
+################################ THIS HOLDS ALL MODELS_ML_EXPLORATORY HYPERPARAMETERS ##################################
 
 # Random Forest: static parameters
 rfr_static_params:

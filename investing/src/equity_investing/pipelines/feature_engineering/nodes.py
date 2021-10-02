@@ -3,6 +3,7 @@
 import pandas as pd
 import numpy as np
 import pandas_market_calendars as mcal
+from pandas_profiling import ProfileReport
 
 
 class DataFiltering:
@@ -418,3 +419,20 @@ class FeatureEngineering:
         data_5 = data_4.dropna()
 
         return data_5
+
+    @staticmethod
+    def create_final_eda_data(modeling_data: pd.DataFrame):
+        """
+        This function creates an html eda file for the modeling data set.
+
+        Args:
+            modeling_data:
+
+        Returns:
+            Pandas profiling html file for viewing.
+        """
+        eda_profile = ProfileReport(modeling_data, title='Equity Investing Final Modeling Data EDA', explorative=True)
+        # As json file
+        eda_profile_html = eda_profile.to_html()
+
+        return eda_profile_html

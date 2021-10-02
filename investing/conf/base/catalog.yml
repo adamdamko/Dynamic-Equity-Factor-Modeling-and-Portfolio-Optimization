@@ -31,6 +31,11 @@ prices:
 #  type: pandas.CSVDataSet
 #  filepath: data/02_intermediate/intro_cleaned_data.csv
 
+# Cleaned data from raw_joined_data
+cleaned_data_eda:
+  type: pickle.PickleDataSet
+  filepath: data/02_intermediate/cleaned_data_eda.html
+
 # Market cap data with market cap categorical variable
 #market_cap_data:
 #  type: pandas.CSVDataSet
@@ -84,6 +89,11 @@ modeling_data:
     dtype: { 'sector': category,
              'market_cap_cat': category }
 
+# Cleaned data from raw_joined_data
+eda_modeling_data:
+  type: pickle.PickleDataSet
+  filepath: data/04_feature/eda_modeling_data.html
+
 # Holdout data
 holdout_data:
   type: pandas.CSVDataSet
@@ -110,22 +120,32 @@ time_series_split_list:
   type: pickle.PickleDataSet
   filepath: data/05_model_input/time_series_split_list.pickle
 
-# Exploratory models: random forest
+# Exploratory models_ml_final: random forest
 rfr_model:
   type: pickle.PickleDataSet
   filepath: data/06_models/rfr_model.pickle
 
-# Exploratory models: xgboost
+# Exploratory models_ml_final: xgboost
 xgb_model:
   type: pickle.PickleDataSet
   filepath: data/06_models/xgb_model.pickle
 
-## LightGBM coarse best model tune cv
-#lgbm_coarse_best_params_model:
-#  type: pickle.PickleDataSet
-#  filepath: data/06_models/lgbm_coarse_best_params_model.pickle
+# LightGBM coarse tune cv
+lgbm_coarse_best_params_model:
+  type: pickle.PickleDataSet
+  filepath: data/06_models/lgbm_coarse_cv_model.pickle
+
+# LightGBM course tune cv hyperparameter visualization
+lgbm_coarse_cv_model_hyperparameters:
+  type: matplotlib.MatplotlibWriter
+  filepath: data/07_model_output/lgbm_coarse_cv_model_hyperparameters.png
 
 # LightGBM fine-tune cv
 lgbm_fine_cv_model:
   type: pickle.PickleDataSet
   filepath: data/06_models/lgbm_fine_cv_model.pickle
+
+# LightGBM fine tune cv hyperparameter visualization
+lgbm_fine_cv_model_hyperparameters:
+  type: matplotlib.MatplotlibWriter
+  filepath: data/07_model_output/lgbm_fine_cv_model_hyperparameters.png
