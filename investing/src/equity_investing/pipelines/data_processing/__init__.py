@@ -1,1 +1,1 @@
-from .pipeline import create_pipeline  # NOQA
+from .pipeline import create_pipeline, create_eda_pipeline  # NOQA

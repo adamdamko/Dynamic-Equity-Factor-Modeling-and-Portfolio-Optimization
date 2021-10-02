@@ -1,6 +1,7 @@
 # This is the data_processing nodes file
 # Import libraries
 import pandas as pd
+from pandas_profiling import ProfileReport
 
 
 def join_data(companies: pd.DataFrame, industries: pd.DataFrame, prices: pd.DataFrame) -> pd.DataFrame:
@@ -58,3 +59,20 @@ def intro_clean_data(raw_joined_data: pd.DataFrame) -> pd.DataFrame:
     raw_data_2.loc[:, 'industry'] = raw_data_2.loc[:, 'industry'].astype('category')
 
     return raw_data_2
+
+
+def clean_data_eda(intro_cleaned_data: pd.DataFrame):
+    """
+    This function outputs a pandas profiling json object for viewing.
+
+    Args:
+        intro_cleaned_data:
+
+    Returns:
+        Pandas profiling json object.
+    """
+    eda_profile = ProfileReport(intro_cleaned_data, title='Equity Investing Raw Data EDA', explorative=True)
+    # As json file
+    eda_profile_html = eda_profile.to_html()
+
+    return eda_profile_html

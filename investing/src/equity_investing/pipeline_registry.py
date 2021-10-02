@@ -33,7 +33,7 @@ from kedro.pipeline import Pipeline
 from equity_investing.pipelines import data_processing as dp
 from equity_investing.pipelines import feature_engineering as fe
 from equity_investing.pipelines import models_ml_exploratory as me
-from equity_investing.pipelines import models as md
+from equity_investing.pipelines import models_ml_final as mf
 
 
 # Run the registry
@@ -44,23 +44,36 @@ def register_pipelines() -> Dict[str, Pipeline]:
         A mapping from a pipeline name to a ``Pipeline`` object.
     """
     data_processing_pipeline = dp.create_pipeline()
+    raw_data_eda_pipeline = dp.create_eda_pipeline()
     feature_engineering_pipeline = fe.create_pipeline()
-    train_test_split_pipeline = md.create_test_train_validation_sets_pipeline()
+    final_data_eda_pipeline = fe.create_final_eda_pipeline()
+    train_test_split_pipeline = mf.create_test_train_validation_sets_pipeline()
     exploratory_models_pipeline = me.create_exploratory_models_pipeline()
-    hyperparameter_tuning_pipeline = md.create_hyperparameter_tuning_pipeline()
+    coarse_hyperparameter_tuning_pipeline = mf.create_coarse_hyperparameter_tuning_pipeline()
+    fine_hyperparameter_tuning_pipeline = mf.create_fine_hyperparameter_tuning_pipeline()
 
     return {
+        # Individual pipelines
         "data_processing": data_processing_pipeline,
+        "raw_data_eda": raw_data_eda_pipeline,
         "feature_engineering": feature_engineering_pipeline,
+        "final_data_eda": final_data_eda_pipeline,
         "train_test_splits": train_test_split_pipeline,
-        "hyperparameter_tuning": hyperparameter_tuning_pipeline,
-        "__default__": data_processing_pipeline + feature_engineering_pipeline +
-        train_test_split_pipeline + hyperparameter_tuning_pipeline,
+        "exploratory_models": exploratory_models_pipeline,
+        "coarse_hyperparameter_tuning": coarse_hyperparameter_tuning_pipeline,
+        "fine_hyperparameter_tuning": fine_hyperparameter_tuning_pipeline,
 
-        # Default pipeline with EDA html files
-        "default_eda": data_processing_pipeline + feature_engineering_pipeline +
-        train_test_split_pipeline + hyperparameter_tuning_pipeline,
+
+        # PIPELINES FOR EXECUTION
+        # Default pipeline
+        "__default__": data_processing_pipeline + feature_engineering_pipeline +
+                       train_test_split_pipeline + fine_hyperparameter_tuning_pipeline,
+        # EDA pipelines
+        "raw_eda": data_processing_pipeline + raw_data_eda_pipeline,
+        "full_eda": data_processing_pipeline + raw_data_eda_pipeline + feature_engineering_pipeline +
+                    final_data_eda_pipeline,
         # Full pipeline (takes long to run)
-        "full_pipeline": data_processing_pipeline + feature_engineering_pipeline +
-        train_test_split_pipeline + exploratory_models_pipeline,
+        "full_pipeline_ex_eda": data_processing_pipeline + feature_engineering_pipeline +
+                                train_test_split_pipeline + exploratory_models_pipeline +
+                                coarse_hyperparameter_tuning_pipeline + fine_hyperparameter_tuning_pipeline,
     }

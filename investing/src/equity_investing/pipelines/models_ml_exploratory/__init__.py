@@ -1,1 +1,1 @@
-from .pipeline import create_exploratory_models_pipeline
+from .pipeline import create_exploratory_models_pipeline  # NOQA

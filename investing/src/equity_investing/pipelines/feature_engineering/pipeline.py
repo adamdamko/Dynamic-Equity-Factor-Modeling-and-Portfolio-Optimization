@@ -69,3 +69,16 @@ def create_pipeline(**kwargs):
             ),
         ]
     )
+
+
+def create_final_eda_pipeline(**kwargs):
+    return Pipeline(
+        [
+            node(
+                func=FeatureEngineering.create_final_eda_data,
+                inputs=['modeling_data'],
+                outputs='eda_modeling_data',
+                name='eda_modeling_data_node',
+            ),
+        ]
+    )
