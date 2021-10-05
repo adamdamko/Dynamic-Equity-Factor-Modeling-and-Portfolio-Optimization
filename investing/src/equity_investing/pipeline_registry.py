@@ -67,7 +67,7 @@ def register_pipelines() -> Dict[str, Pipeline]:
         # PIPELINES FOR EXECUTION
         # Default pipeline
         "__default__": data_processing_pipeline + feature_engineering_pipeline +
-                       train_test_split_pipeline + fine_hyperparameter_tuning_pipeline,
+                       train_test_split_pipeline + coarse_hyperparameter_tuning_pipeline,
         # EDA pipelines
         "raw_eda": data_processing_pipeline + raw_data_eda_pipeline,
         "full_eda": data_processing_pipeline + raw_data_eda_pipeline + feature_engineering_pipeline +
