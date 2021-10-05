@@ -157,7 +157,7 @@ class HyperparameterTuning:
     """
     @staticmethod
     def train_cv_lgbm(train_x_data: pd.DataFrame, train_y_data: pd.DataFrame, time_series_split_list: list,
-                      params_static: Dict, params: Dict):
+                      params_static: Dict, params: Dict, params_features):
         """
         This performs cross-validation for hyperparameter tuning.
 
@@ -167,6 +167,7 @@ class HyperparameterTuning:
             time_series_split_list:
             params_static: Static parameters defined in parameters.yml
             params: Parameters defined in parameters.yml
+            params_features: model train features
 
         Returns:
             Model object.
@@ -176,6 +177,8 @@ class HyperparameterTuning:
         X_train = train_x_data.copy()
         y_train = train_y_data.copy()
         tscv = time_series_split_list.copy()
+        # Get features
+        X_train = X_train[params_features]
         # Train X data
         X_train.loc[:, 'sector'] = X_train.loc[:, 'sector'].astype('category')
         X_train.loc[:, 'market_cap_cat'] = X_train.loc[:, 'market_cap_cat'].astype('category')
@@ -184,7 +187,8 @@ class HyperparameterTuning:
         # Instantiate regressor
         lgbm = lgb.LGBMRegressor(boosting_type=params_static['boosting_type'],
                                  extra_trees=params_static['extra_trees'],
-                                 n_jobs=params_static['n_jobs']
+                                 n_jobs=params_static['n_jobs'],
+                                 early_stopping_round=params_static['early_stopping_round']
                                  )
 
         # Create the parameter dictionary: params
@@ -200,7 +204,7 @@ class HyperparameterTuning:
         lgbm_randomized = TransformedTargetRegressor(RandomizedSearchCV(estimator=lgbm_pipeline,
                                                                         param_distributions=lgbm_param_grid,
                                                                         n_iter=params_static['n_iter'],
-                                                                        scoring='neg_mean_absolute_percentage_error',
+                                                                        scoring=params_static['scoring'],
                                                                         cv=tscv,
                                                                         verbose=10,
                                                                         refit=True
@@ -229,10 +233,9 @@ class HyperparameterTuning:
 
         param_list = ['param_lgbm_model__n_estimators',
                       'param_lgbm_model__learning_rate',
-                      'param_lgbm_model__max_depth',
                       'param_lgbm_model__reg_lambda',
                       'param_lgbm_model__num_leaves',
-                      'param_lgbm_model__max_bin']
+                      'param_lgbm_model__min_data_in_leaf']
 
         fig, axes = plt.subplots(6)
         for ax, param in zip(axes, param_list):
@@ -245,7 +248,7 @@ class HyperparameterTuning:
 
     @staticmethod
     def random_state_test(train_x_data: pd.DataFrame, train_y_data: pd.DataFrame, time_series_split_list: list,
-                          params_static: Dict, params: Dict, params_features: Dict):
+                          params_static: Dict, params: Dict, params_features):
         """
         This performs random-state cross-validation for tuning.
 
@@ -300,7 +303,7 @@ class HyperparameterTuning:
             RandomizedSearchCV(estimator=lgbm_seed_pipeline,
                                param_distributions=lgbm_seed_param_grid,
                                n_iter=200,
-                               scoring='neg_mean_absolute_percentage_error',
+                               scoring=params_static['scoring'],
                                cv=tscv,
                                verbose=10,
                                refit=True

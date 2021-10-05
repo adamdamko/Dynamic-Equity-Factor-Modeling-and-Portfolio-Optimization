@@ -131,7 +131,7 @@ xgb_model:
   filepath: data/06_models/xgb_model.pickle
 
 # LightGBM coarse tune cv
-lgbm_coarse_best_params_model:
+lgbm_coarse_cv_model:
   type: pickle.PickleDataSet
   filepath: data/06_models/lgbm_coarse_cv_model.pickle
 

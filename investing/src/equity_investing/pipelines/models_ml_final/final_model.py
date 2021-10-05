@@ -34,6 +34,43 @@ from sklearn.model_selection import RandomizedSearchCV
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.compose import TransformedTargetRegressor
+from sklearn.metrics import mean_absolute_percentage_error
+from sklearn.metrics import mean_squared_error
+from sklearn.metrics import median_absolute_error
+
+#%% Get holdout data
+hold_data = pd.read_csv(
+    'C:/Users/damko/PycharmProjects/Equity_Investing/investing/data/05_model_input/holdout_data.csv'
+)
+
+#%% Get X_test, y_test
+x_test = hold_data.drop(columns=['date', 'ticker', 'target_1m_mom_lead'])
+# Extract columns for StandardScaler
+float_mask = (x_test.dtypes == 'float64')
+# Get list of float column names
+float_columns = x_test.columns[float_mask].tolist()
+# Create StandardScaler object
+scalerx = StandardScaler()
+# Scale columns
+x_test[float_columns] = scalerx.fit_transform(x_test[float_columns])
+# Make as categorical
+x_test.loc[:, 'sector'] = x_test.loc[:, 'sector'].astype('category')
+x_test.loc[:, 'market_cap_cat'] = x_test.loc[:, 'market_cap_cat'].astype('category')
+# Reset index to match with splits
+x_test = x_test.reset_index(drop=True)
+# Get y_test
+y_test = hold_data['target_1m_mom_lead']
+
+#%% Predict on x_test
+test_x = X_train.filter(items=tscv[3][1], axis=0)
+test_y = y_train.filter(items=tscv[3][1], axis=0)
+
+#%%
+# Get predictions just with predict
+predictions = lgbm_fine_cv_model.predict(test_x)
+# Get error
+pred_error = mean_absolute_percentage_error(test_y, predictions)
+
 
 #%% Get train data and splits
 
@@ -52,6 +89,9 @@ tscv = pd.read_pickle(
 # Train X data
 X_train.loc[:, 'sector'] = X_train.loc[:, 'sector'].astype('category')
 X_train.loc[:, 'market_cap_cat'] = X_train.loc[:, 'market_cap_cat'].astype('category')
+
+#%% Make dummy
+# X_train = pd.get_dummies(X_train, columns=['sector', 'market_cap_cat'])
 
 #%% LIGHTGBM
 # LIGHTGBM PIPELINE
@@ -82,8 +122,8 @@ lgbm_pipeline = Pipeline(lgbm_steps)
 # Perform random search: grid_mae
 lgbm_randomized = TransformedTargetRegressor(RandomizedSearchCV(estimator=lgbm_pipeline,
                                                                 param_distributions=lgbm_param_grid,
-                                                                n_iter=500,
-                                                                scoring='neg_mean_absolute_percentage_error',
+                                                                n_iter=50,
+                                                                scoring='neg_root_mean_squared_error',
                                                                 cv=tscv,
                                                                 verbose=10,
                                                                 refit=True
@@ -94,7 +134,7 @@ lgbm_randomized = TransformedTargetRegressor(RandomizedSearchCV(estimator=lgbm_p
 lgbm_randomized.fit(X_train, y_train)  # categorical_feature is auto
 
 #%% Compute metrics
-lgbm_randomized = lgbm_fine_cv_model
+# lgbm_randomized = lgbm_fine_cv_model
 # Print the best parameters and lowest MAE
 print("Best estimators found: ", lgbm_randomized.regressor_.best_estimator_)
 print("Best parameters found: ", lgbm_randomized.regressor_.best_params_)
@@ -144,15 +184,15 @@ plt.show()
 # Using best hyperparameters from old tests
 # LIGHTGBM PIPELINE
 # Instantiate regressor
-lgbm_seed = lgb.LGBMRegressor(n_estimators=140,
+lgbm_seed = lgb.LGBMRegressor(n_estimators=750,
                               learning_rate=0.012,
-                              reg_lambda=10.625,
-                              num_leaves=6,
-                              max_depth=350,
+                              reg_lambda=2,
+                              num_leaves=127,
+                              # max_depth=350,
                               max_bin=460,
                               boosting_type='dart',
                               extra_trees=True,
-                              n_jobs=23)  # bagging_freq=10 for future
+                              n_jobs=23)
 
 # Create the parameter dictionary: params
 lgbm_seed_param_grid = {
@@ -166,22 +206,53 @@ lgbm_seed_steps = [("lgbm_model", lgbm_seed)]
 lgbm_seed_pipeline = Pipeline(lgbm_seed_steps)
 
 # Perform random search: grid_mae
-lgbm_seed_randomized = TransformedTargetRegressor(RandomizedSearchCV(estimator=lgbm_seed_pipeline,
-                                                                     param_distributions=lgbm_seed_param_grid,
-                                                                     n_iter=200,
-                                                                     scoring='neg_mean_absolute_percentage_error',
-                                                                     cv=tscv,
-                                                                     verbose=10,
-                                                                     refit=True
-                                                                     ),
-                                                  transformer=StandardScaler()
-                                                  )
+lgbm_seed_randomized = RandomizedSearchCV(estimator=lgbm_seed_pipeline,
+                                          param_distributions=lgbm_seed_param_grid,
+                                          n_iter=100,
+                                          scoring='neg_mean_absolute_percentage_error',
+                                          cv=tscv,
+                                          verbose=10,
+                                          refit=True
+                                          )
 # Fit the estimator
 lgbm_seed_randomized.fit(X_train, y_train)  # categorical_feature is auto
 
 # Look at cv_results
-lgbm_seed_cv_results = pd.DataFrame(lgbm_seed_randomized.regressor_.cv_results_)
+lgbm_seed_cv_results = pd.DataFrame(lgbm_seed_randomized.cv_results_)
 
+#%% Testing
+# Transform y
+# y_train = pd.DataFrame(scalerx.fit_transform(y_train))
+# Set testers
+train_x = X_train.filter(items=tscv[3][0], axis=0)
+train_y = y_train.filter(items=tscv[3][0], axis=0)
+
+lgb_test = TransformedTargetRegressor(lgb.LGBMRegressor(n_estimators=1000,  # 140,
+                                                        learning_rate=0.012,
+                                                        reg_lambda=2,  # 10.625,
+                                                        num_leaves=127,  # 6,
+                                                        # max_depth=10,  #350,
+                                                        max_bin=460,
+                                                        boosting_type='dart',
+                                                        # extra_trees=True,
+                                                        n_jobs=23),
+                                      transformer=StandardScaler()
+                                      )
+
+# Fit the estimator
+lgb_test.fit(train_x, train_y)
+
+# Test preds
+test_x = X_train.filter(items=tscv[3][1], axis=0)
+test_y = pd.DataFrame(y_train.filter(items=tscv[3][1], axis=0)).reset_index(drop=True)
+test_preds = pd.DataFrame(lgb_test.predict(test_x))
+# Get mse
+test_error = mean_squared_error(test_y, test_preds)
+# Join preds and test
+test_view = pd.concat([test_y, test_preds], axis=1)
+
+#%%
+test_view_2 = test_view.sort_values(by=0, ascending=False).head(100)
 
 #%% Save model cv's
 # Initial model cv
@@ -193,18 +264,16 @@ lgbm_seed_cv_results = pd.DataFrame(lgbm_seed_randomized.regressor_.cv_results_)
 
 #%% Load model cv's
 lgbm_fine_cv_model = joblib.load(
-    'C:/Users/damko/PycharmProjects/Equity_Investing/investing/data/06_models/lgbm_fine_cv_model.pickle'
+    'C:/Users/damko/PycharmProjects/Equity_Investing/investing/data/06_models/lgbm_coarse_cv_model.pkl'
 )
 
 # pd.read_pickle(
 #     'C:/Users/damko/PycharmProjects/Equity_Investing/investing/data/05_model_input/time_series_split_list.pickle'
 # )
 
-#%% Look at model cv results
-lgbm_coarse_cv_model_results = pd.DataFrame(lgbm_coarse_cv_model.regressor_.cv_results_)
 
 #%% SHAP
-explainer = shap.TreeExplainer(lgbm_fine_cv_model)
-shap_values = explainer.shap_values(X_train)
+# explainer = shap.TreeExplainer(lgbm_fine_cv_model)
+# shap_values = explainer.shap_values(X_train)
 
 # shap.force_plot(explainer.expected_value[1], shap_values[1][0,:], X_train.iloc[0, :])
