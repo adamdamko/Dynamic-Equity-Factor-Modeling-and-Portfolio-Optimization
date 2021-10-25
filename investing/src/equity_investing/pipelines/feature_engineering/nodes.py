@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 import pandas_market_calendars as mcal
 from pandas_profiling import ProfileReport
+from typing import Dict
 
 
 class DataFiltering:
@@ -47,7 +48,7 @@ class DataFiltering:
             Pandas dataframe of data  '2007-02-01' <= data <= '2021-08-31'
         """
         data = filtered_data
-        data_2 = data[(data['date'] >= '2007-02-01') & (data['date'] <= '2021-08-31')]
+        data_2 = data[(data['date'] >= '2007-02-01') & (data['date'] <= '2021-09-30')]
 
         return data_2
 
@@ -71,7 +72,7 @@ class FeatureEngineering:
         """
         data = intro_cleaned_data
         # Make market cap feature
-        data.loc[:, 'market_cap'] = data['adj_close'] * data['shares_out']
+        # data.loc[:, 'market_cap'] = data['adj_close'] * data['shares_out']
         # Make market cap category
         col = 'market_cap'
         conditions = [data[col] >= 2 * 10 ** 11,
@@ -86,12 +87,13 @@ class FeatureEngineering:
         return data
 
     @staticmethod
-    def create_returns(filtered_dates_data: pd.DataFrame) -> pd.DataFrame:
+    def create_returns(filtered_dates_data: pd.DataFrame, change_index_list: Dict) -> pd.DataFrame:
         """
         This function creates a return series.
 
         Args:
             filtered_dates_data:
+            change_index_list: list of variables excluding prices for which to make a return index
 
         Returns:
             Pandas dataframe with a return series
@@ -100,36 +102,52 @@ class FeatureEngineering:
         data = filtered_dates_data
         # Create returns series
         data = data.sort_values(['ticker', 'date'])
-        data['return_index'] = data['adj_close'] / data.groupby('ticker')['adj_close'].transform('first')
+        data.loc[:, 'return_index'] = data['adj_close'] / data.groupby('ticker')['adj_close'].transform('first')
+        # Create change index
+        for feature in change_index_list:
+            data.loc[:, feature+'_index'] = data[feature] / data.groupby('ticker')[feature].transform('first')
 
         return data
 
     @staticmethod
-    def create_rolling_values(returns_data: pd.DataFrame) -> pd.DataFrame:
+    def create_rolling_values(returns_data: pd.DataFrame, sum_list: Dict, avg_list: Dict, med30_list: Dict)\
+            -> pd.DataFrame:
         """
         This function creates rolling values for returns and volume.
 
         Args:
             returns_data:
+            sum_list: list of columns to make rolling sums
+            avg_list: list of columns to make rolling averages
+            med30_list: list of columns to make 30-day rolling medians
 
         Returns:
             Pandas dataframe with rolling values.
         """
-        data = returns_data
-
-        # Create rolling returns for 1-month momentum
-        data_2 = data
-        data_2.loc[:, 'roll_7day_sum_ret'] = data_2.groupby('ticker')['return_index']. \
-            transform(lambda group: group.rolling(7, 7).sum())
-
-        # Create rolling returns for 3-, 6-, 12-month momentum
-        data_2 = data
-        data_2.loc[:, 'roll_11day_sum_ret'] = data_2.groupby('ticker')['return_index']. \
-            transform(lambda group: group.rolling(11, 11).sum())
-
-        # Create 30-day rolling volume
-        data_2.loc[:, 'roll_30day_med_vol'] = data_2.groupby('ticker')['volume']. \
-            transform(lambda group: group.rolling(30, 10).median())
+        data_2 = returns_data
+        ## ROLLING 7-DAY FEATURES
+        # Create rolling 7-day sums
+        for feature in sum_list:
+            data_2.loc[:, 'roll_7day_sum_'+feature] = data_2.groupby('ticker')[feature].\
+                transform(lambda group: group.rolling(7, 7).sum())
+        # Create rolling 7-day averages
+        for feature in avg_list:
+            data_2.loc[:, 'roll_7day_avg_'+feature] = data_2.groupby('ticker')[feature].\
+                transform(lambda group: group.rolling(7, 7).mean())
+        ## ROLLING 11-DAY FEATURES
+        # Create rolling 11-day sums
+        for feature in sum_list:
+            data_2.loc[:, 'roll_11day_sum_'+feature] = data_2.groupby('ticker')[feature].\
+                transform(lambda group: group.rolling(11, 11).sum())
+        # Create rolling 11-day averages
+        for feature in avg_list:
+            data_2.loc[:, 'roll_11day_avg_'+feature] = data_2.groupby('ticker')[feature].\
+                transform(lambda group: group.rolling(11, 11).mean())
+        ## ROLLING 30-DAY FEATURES
+        # Create 30-day rolling features
+        for feature in med30_list:
+            data_2.loc[:, 'roll_30day_med_'+feature] = data_2.groupby('ticker')[feature].\
+                transform(lambda group: group.rolling(30, 11).median())
 
         return data_2
 
@@ -144,13 +162,13 @@ class FeatureEngineering:
 
         Returns:
             Pandas dataframe with a the NYSE trading day schedule from
-            2007-02-01 to 2020-01-31.
+            2007-02-01 to 2021-09-30.
         """
         # Get market calendar dates
         # Get NYSE calendar
         nyse = mcal.get_calendar('NYSE')
         # Get date schedule
-        schedule = nyse.schedule(start_date='2007-02-01', end_date='2021-08-31')
+        schedule = nyse.schedule(start_date='2007-02-01', end_date='2021-09-30')
         # Get month end
         schedule['year'] = schedule['market_close'].dt.year
         schedule['month'] = schedule['market_close'].dt.month
@@ -166,7 +184,8 @@ class FeatureEngineering:
         return schedule_join
 
     @staticmethod
-    def lagged_rolling_returns(rolling_values_data: pd.DataFrame, market_schedule_data: pd.DataFrame) -> pd.DataFrame:
+    def lagged_rolling_returns(rolling_values_data: pd.DataFrame, market_schedule_data: pd.DataFrame,
+                               sum_list: Dict, avg_list: Dict) -> pd.DataFrame:
         """
         This function creates the lag rolling return value correctly for
         month over month values. It uses the exact number of trading days
@@ -175,6 +194,8 @@ class FeatureEngineering:
         Args:
             rolling_values_data:
             market_schedule_data:
+            sum_list: list of columns to make rolling sums
+            avg_list: list of columns to make rolling averages
 
         Returns:
             Pandas dataframe with with complete months of rolling returns,
@@ -185,6 +206,7 @@ class FeatureEngineering:
         schedule_join = market_schedule_data
 
         # Split date into year, month, day
+        data_2.loc[:, 'date'] = pd.to_datetime(data_2['date'])
         data_2.loc[:, 'year'] = data_2['date'].dt.year
         data_2.loc[:, 'month'] = data_2['date'].dt.month
         data_2.loc[:, 'day'] = data_2['date'].dt.day
@@ -198,7 +220,8 @@ class FeatureEngineering:
         # Filter out incomplete months
         data_4 = data_3[data_3['days_in_month'] == data_3['cal_days_in_month']]
 
-        # Create lagged rolling return value
+        ## CREATE 1-MONTH FEATURES
+        # Conditions for 1-month
         conditions_1m = [
             (data_4['days_in_month'] == 19),
             (data_4['days_in_month'] == 20),
@@ -206,7 +229,32 @@ class FeatureEngineering:
             (data_4['days_in_month'] == 22),
             (data_4['days_in_month'] == 23)
         ]
+        # Loop through sum_list
+        for feature in sum_list:
+            choices_1m = [
+                (data_4.groupby('ticker')['roll_7day_sum_'+feature].shift(16)),
+                (data_4.groupby('ticker')['roll_7day_sum_'+feature].shift(17)),
+                (data_4.groupby('ticker')['roll_7day_sum_'+feature].shift(18)),
+                (data_4.groupby('ticker')['roll_7day_sum_'+feature].shift(19)),
+                (data_4.groupby('ticker')['roll_7day_sum_'+feature].shift(20))
+            ]
+            # Add the lag rolling sum 1-month feature
+            data_4.loc[:, 'roll_7day_sum_'+feature+'_1m_lag'] = np.select(conditions_1m, choices_1m, default=np.nan)
 
+        # Loop through avg_list
+        for feature in avg_list:
+            choices_1m = [
+                (data_4.groupby('ticker')['roll_7day_avg_'+feature].shift(16)),
+                (data_4.groupby('ticker')['roll_7day_avg_'+feature].shift(17)),
+                (data_4.groupby('ticker')['roll_7day_avg_'+feature].shift(18)),
+                (data_4.groupby('ticker')['roll_7day_avg_'+feature].shift(19)),
+                (data_4.groupby('ticker')['roll_7day_avg_'+feature].shift(20))
+            ]
+            # Add the lag rolling average for 1-month feature
+            data_4.loc[:, 'roll_7day_avg_'+feature+'_1m_lag'] = np.select(conditions_1m, choices_1m, default=np.nan)
+
+        ## CREATE 3-MONTH FEATURES
+        # Conditions for 3-month
         conditions_3m = [
             (data_4['days_in_month'] == 19) & (data_4['days_in_month'].shift(47) == 19),
             (data_4['days_in_month'] == 19) & (data_4['days_in_month'].shift(47) == 20),
@@ -235,49 +283,89 @@ class FeatureEngineering:
             (data_4['days_in_month'] == 23) & (data_4['days_in_month'].shift(47) == 23)
         ]
 
-        choices_1m = [
-            (data_4.groupby('ticker')['roll_7day_sum_ret'].shift(16)),
-            (data_4.groupby('ticker')['roll_7day_sum_ret'].shift(17)),
-            (data_4.groupby('ticker')['roll_7day_sum_ret'].shift(18)),
-            (data_4.groupby('ticker')['roll_7day_sum_ret'].shift(19)),
-            (data_4.groupby('ticker')['roll_7day_sum_ret'].shift(20))
-        ]
+        # Loop through sum_list
+        for feature in sum_list:
+            choices_3m = [
+                (data_4.groupby('ticker')['roll_11day_sum_'+feature].shift(55)),
+                (data_4.groupby('ticker')['roll_11day_sum_'+feature].shift(55)),
+                (data_4.groupby('ticker')['roll_11day_sum_'+feature].shift(55)),
+                (data_4.groupby('ticker')['roll_11day_sum_'+feature].shift(56)),
+                (data_4.groupby('ticker')['roll_11day_sum_'+feature].shift(57)),
+                (data_4.groupby('ticker')['roll_11day_sum_'+feature].shift(56)),
+                (data_4.groupby('ticker')['roll_11day_sum_'+feature].shift(56)),
+                (data_4.groupby('ticker')['roll_11day_sum_'+feature].shift(56)),
+                (data_4.groupby('ticker')['roll_11day_sum_'+feature].shift(57)),
+                (data_4.groupby('ticker')['roll_11day_sum_'+feature].shift(58)),
+                (data_4.groupby('ticker')['roll_11day_sum_'+feature].shift(57)),
+                (data_4.groupby('ticker')['roll_11day_sum_'+feature].shift(57)),
+                (data_4.groupby('ticker')['roll_11day_sum_'+feature].shift(57)),
+                (data_4.groupby('ticker')['roll_11day_sum_'+feature].shift(58)),
+                (data_4.groupby('ticker')['roll_11day_sum_'+feature].shift(59)),
+                (data_4.groupby('ticker')['roll_11day_sum_'+feature].shift(58)),
+                (data_4.groupby('ticker')['roll_11day_sum_'+feature].shift(58)),
+                (data_4.groupby('ticker')['roll_11day_sum_'+feature].shift(58)),
+                (data_4.groupby('ticker')['roll_11day_sum_'+feature].shift(59)),
+                (data_4.groupby('ticker')['roll_11day_sum_'+feature].shift(60)),
+                (data_4.groupby('ticker')['roll_11day_sum_'+feature].shift(59)),
+                (data_4.groupby('ticker')['roll_11day_sum_'+feature].shift(59)),
+                (data_4.groupby('ticker')['roll_11day_sum_'+feature].shift(59)),
+                (data_4.groupby('ticker')['roll_11day_sum_'+feature].shift(60)),
+                (data_4.groupby('ticker')['roll_11day_sum_'+feature].shift(61))
+            ]
+            # Add the lag rolling sum 3-month feature
+            data_4.loc[:, 'roll_11day_sum_'+feature+'_3m_lag'] = np.select(conditions_3m, choices_3m, default=np.nan)
 
-        choices_3m = [
-            (data_4.groupby('ticker')['roll_11day_sum_ret'].shift(55)),
-            (data_4.groupby('ticker')['roll_11day_sum_ret'].shift(55)),
-            (data_4.groupby('ticker')['roll_11day_sum_ret'].shift(55)),
-            (data_4.groupby('ticker')['roll_11day_sum_ret'].shift(56)),
-            (data_4.groupby('ticker')['roll_11day_sum_ret'].shift(57)),
-            (data_4.groupby('ticker')['roll_11day_sum_ret'].shift(56)),
-            (data_4.groupby('ticker')['roll_11day_sum_ret'].shift(56)),
-            (data_4.groupby('ticker')['roll_11day_sum_ret'].shift(56)),
-            (data_4.groupby('ticker')['roll_11day_sum_ret'].shift(57)),
-            (data_4.groupby('ticker')['roll_11day_sum_ret'].shift(58)),
-            (data_4.groupby('ticker')['roll_11day_sum_ret'].shift(57)),
-            (data_4.groupby('ticker')['roll_11day_sum_ret'].shift(57)),
-            (data_4.groupby('ticker')['roll_11day_sum_ret'].shift(57)),
-            (data_4.groupby('ticker')['roll_11day_sum_ret'].shift(58)),
-            (data_4.groupby('ticker')['roll_11day_sum_ret'].shift(59)),
-            (data_4.groupby('ticker')['roll_11day_sum_ret'].shift(58)),
-            (data_4.groupby('ticker')['roll_11day_sum_ret'].shift(58)),
-            (data_4.groupby('ticker')['roll_11day_sum_ret'].shift(58)),
-            (data_4.groupby('ticker')['roll_11day_sum_ret'].shift(59)),
-            (data_4.groupby('ticker')['roll_11day_sum_ret'].shift(60)),
-            (data_4.groupby('ticker')['roll_11day_sum_ret'].shift(59)),
-            (data_4.groupby('ticker')['roll_11day_sum_ret'].shift(59)),
-            (data_4.groupby('ticker')['roll_11day_sum_ret'].shift(59)),
-            (data_4.groupby('ticker')['roll_11day_sum_ret'].shift(60)),
-            (data_4.groupby('ticker')['roll_11day_sum_ret'].shift(61))
-        ]
-        # Add the lag rolling sum for 1-month momentum
-        data_4.loc[:, 'roll_7day_sum_ret_1m_lag'] = np.select(conditions_1m, choices_1m, default=np.nan)
-        # Add the lag rolling sum for 3-month momentum
-        data_4.loc[:, 'roll_11day_sum_ret_3m_lag'] = np.select(conditions_3m, choices_3m, default=np.nan)
-        # Add the lag rolling sum for 6-month momentum
-        data_4.loc[:, 'roll_11day_sum_ret_6m_lag'] = data_4.groupby('ticker')['roll_11day_sum_ret'].shift(121)
-        # Add the lag rolling sum for 6-month momentum
-        data_4.loc[:, 'roll_11day_sum_ret_12m_lag'] = data_4.groupby('ticker')['roll_11day_sum_ret'].shift(247)
+        # Loop through avg_list
+        for feature in avg_list:
+            choices_3m = [
+                (data_4.groupby('ticker')['roll_11day_avg_' + feature].shift(55)),
+                (data_4.groupby('ticker')['roll_11day_avg_' + feature].shift(55)),
+                (data_4.groupby('ticker')['roll_11day_avg_' + feature].shift(55)),
+                (data_4.groupby('ticker')['roll_11day_avg_' + feature].shift(56)),
+                (data_4.groupby('ticker')['roll_11day_avg_' + feature].shift(57)),
+                (data_4.groupby('ticker')['roll_11day_avg_' + feature].shift(56)),
+                (data_4.groupby('ticker')['roll_11day_avg_' + feature].shift(56)),
+                (data_4.groupby('ticker')['roll_11day_avg_' + feature].shift(56)),
+                (data_4.groupby('ticker')['roll_11day_avg_' + feature].shift(57)),
+                (data_4.groupby('ticker')['roll_11day_avg_' + feature].shift(58)),
+                (data_4.groupby('ticker')['roll_11day_avg_' + feature].shift(57)),
+                (data_4.groupby('ticker')['roll_11day_avg_' + feature].shift(57)),
+                (data_4.groupby('ticker')['roll_11day_avg_' + feature].shift(57)),
+                (data_4.groupby('ticker')['roll_11day_avg_' + feature].shift(58)),
+                (data_4.groupby('ticker')['roll_11day_avg_' + feature].shift(59)),
+                (data_4.groupby('ticker')['roll_11day_avg_' + feature].shift(58)),
+                (data_4.groupby('ticker')['roll_11day_avg_' + feature].shift(58)),
+                (data_4.groupby('ticker')['roll_11day_avg_' + feature].shift(58)),
+                (data_4.groupby('ticker')['roll_11day_avg_' + feature].shift(59)),
+                (data_4.groupby('ticker')['roll_11day_avg_' + feature].shift(60)),
+                (data_4.groupby('ticker')['roll_11day_avg_' + feature].shift(59)),
+                (data_4.groupby('ticker')['roll_11day_avg_' + feature].shift(59)),
+                (data_4.groupby('ticker')['roll_11day_avg_' + feature].shift(59)),
+                (data_4.groupby('ticker')['roll_11day_avg_' + feature].shift(60)),
+                (data_4.groupby('ticker')['roll_11day_avg_' + feature].shift(61))
+            ]
+            # Add the lag rolling sum 3-month feature
+            data_4.loc[:, 'roll_11day_avg_'+feature+'_3m_lag'] = np.select(conditions_3m, choices_3m, default=np.nan)
+
+        ## ROLLING 6-MONTH FEATURES
+        # Create 6-month sum features
+        for feature in sum_list:
+            data_4.loc[:, 'roll_11day_sum_'+feature+'_6m_lag'] = data_4.groupby('ticker')['roll_11day_sum_'+feature].\
+                shift(121)
+        # Create 6-month avg features
+        for feature in avg_list:
+            data_4.loc[:, 'roll_11day_avg_'+feature+'_6m_lag'] = data_4.groupby('ticker')['roll_11day_avg_'+feature]. \
+                shift(121)
+
+        ## ROLLING 12-MONTH FEATURES
+        # Create 12-month sum features
+        for feature in sum_list:
+            data_4.loc[:, 'roll_11day_sum_'+feature+'_12m_lag'] = data_4.groupby('ticker')['roll_11day_sum_'+feature].\
+                shift(247)
+        # Create 12-month avg features
+        for feature in avg_list:
+            data_4.loc[:, 'roll_11day_avg_'+feature+'_12m_lag'] = data_4.groupby('ticker')['roll_11day_avg_'+feature]. \
+                shift(247)
 
         return data_4
 
@@ -298,89 +386,86 @@ class FeatureEngineering:
         # Merge last day with full dataset to get only last day of month
         data_3 = pd.merge(data_2, data, how='left', on=['ticker', 'year', 'month', 'day'], validate='1:1')
         # Remove low volume stocks
-        data_4 = data_3.loc[data_3['roll_30day_med_vol'] > 20000]
+        data_4 = data_3.loc[data_3['roll_30day_med_volume'] > 20000]
 
         return data_4
 
     @staticmethod
-    def create_momentum_factors(monthly_data: pd.DataFrame) -> pd.DataFrame:
+    def create_momentum_factors(monthly_data: pd.DataFrame, param_features: Dict, mom_1m_numerators_list: Dict,
+                                mom_numerators_list: Dict, mom_1m_denominators_list: Dict,
+                                mom_3m_denominators_list: Dict, mom_6m_denominators_list: Dict,
+                                mom_12m_denominators_list: Dict, mom_feature_names_list: Dict,
+                                lag_range) -> pd.DataFrame:
         """
         This function creates the momentum and lagged momentum factors.
+        Outlier dropping was tried but resulted in weaker performance during times the market was flat
+        to down. Old commented code for outlier filtering has been dropped.
 
         Args:
-            monthly_data:
+            monthly_data: Output from get_monthly method.
+            param_features: Feature list for the data set.
+            mom_1m_numerators_list: List for one-month momentum numerator values (separate because
+                                    these will have lagged values).
+                                    Each value in this list must coincide with a value in the
+                                    'mom_1m_denominators_list'.
+            mom_numerators_list: List of 3-, 6-, and 12-month momentum numerator values.
+                                 Each value in this list must coincide with a value in the
+                                 corresponding 'mom_denominators_list'.
+            mom_1m_denominators_list: List for one-month momentum denominator values (separate because
+                                      these will have lagged values).
+                                      Each value in these lists must coincide with a value in the
+                                      'mom_1m_numerators_list'.
+            mom_3m_denominators_list: List of 3-month momentum denominator values.
+                                      Each value in these lists must coincide with a value in the
+                                      'mom_numerators_list'.
+            mom_6m_denominators_list: List of 6-month momentum denominator values.
+                                      Each value in these lists must coincide with a value in the
+                                      'mom_numerators_list'.
+            mom_12m_denominators_list: List of 12-month momentum denominator values.
+                                       Each value in these lists must coincide with a value in the
+                                       'mom_numerators_list'.
+            mom_feature_names_list: List of resulting feature names from momentum feature creation.
+                                    Each value in this list must coincide with a value in the
+                                    'mom_numerators_list' and 'mom_denominators_list'.
+            lag_range: Top of range for 1-month lagged variables (i.e., 25 means lags 1 to 24).
+
 
         Returns:
-            Pandas dataframe with momentum factors, complete months of rolling returns,
-            rolling volume median, and lagged rolling returns.
+            Pandas dataframe with momentum factors, complete months of rolling values,
+            rolling volume median, and lagged rolling values.
         """
         data_3 = monthly_data
 
         # Set data
-        data_4 = data_3[['date',
-                         'ticker',
-                         'sector',
-                         'market_cap',
-                         'market_cap_cat',
-                         'roll_30day_med_vol',
-                         'return_index',
-                         'roll_7day_sum_ret',
-                         'roll_11day_sum_ret',
-                         'roll_7day_sum_ret_1m_lag',
-                         'roll_11day_sum_ret_3m_lag',
-                         'roll_11day_sum_ret_6m_lag',
-                         'roll_11day_sum_ret_12m_lag']]
+        data_4 = data_3[param_features]
 
-        # Create 1-month momentum
-        data_4.loc[:, 'mom_1_0'] = data_4['roll_7day_sum_ret'] / data_4['roll_7day_sum_ret_1m_lag']
-        # Drop outlier 1-month momentum values
-        # data_4 = data_4[~(data_4['mom_1_0'].ge(2))]
+        ## CREATE MOMENTUM FACTORS
+        # Create 1-month momentum.
+        for num, denom, name in list(zip(mom_1m_numerators_list, mom_1m_denominators_list, mom_feature_names_list)):
+            data_4.loc[:, name + '_mom_1_0'] = data_4[num] / data_4[denom]
 
         # Create 3-month momentum
-        data_4.loc[:, 'mom_3_0'] = data_4['roll_11day_sum_ret'] / data_4['roll_11day_sum_ret_3m_lag']
-        # Drop outlier 3-month momentum values
-        # data_4 = data_4[~(data_4['mom_3_0'].ge(2))]
+        for num, denom, name in list(zip(mom_numerators_list, mom_3m_denominators_list, mom_feature_names_list)):
+            data_4.loc[:, name + '_mom_3_0'] = data_4[num] / data_4[denom]
 
         # Create 6-month momentum
-        data_4.loc[:, 'mom_6_0'] = data_4['roll_11day_sum_ret'] / data_4['roll_11day_sum_ret_6m_lag']
-        # Drop outlier 6-month momentum values
-        # data_4 = data_4[~(data_4['mom_6_0'].ge(2))]
+        for num, denom, name in list(zip(mom_numerators_list, mom_6m_denominators_list, mom_feature_names_list)):
+            data_4.loc[:, name + '_mom_6_0'] = data_4[num] / data_4[denom]
 
         # Create 12-month momentum
-        data_4.loc[:, 'mom_12_0'] = data_4['roll_11day_sum_ret'] / data_4['roll_11day_sum_ret_12m_lag']
-        # Drop outlier 12-month momentum values
-        # data_4 = data_4[~(data_4['mom_12_0'].ge(2))]
+        for num, denom, name in list(zip(mom_numerators_list, mom_12m_denominators_list, mom_feature_names_list)):
+            data_4.loc[:, name + '_mom_12_0'] = data_4[num] / data_4[denom]
 
         # Create 1-month momentum lags
-        data_4.loc[:, 'mom_1_0_L1'] = data_4.groupby('ticker')['mom_1_0'].shift(1)
-        data_4.loc[:, 'mom_1_0_L2'] = data_4.groupby('ticker')['mom_1_0'].shift(2)
-        data_4.loc[:, 'mom_1_0_L3'] = data_4.groupby('ticker')['mom_1_0'].shift(3)
-        data_4.loc[:, 'mom_1_0_L4'] = data_4.groupby('ticker')['mom_1_0'].shift(4)
-        data_4.loc[:, 'mom_1_0_L5'] = data_4.groupby('ticker')['mom_1_0'].shift(5)
-        data_4.loc[:, 'mom_1_0_L6'] = data_4.groupby('ticker')['mom_1_0'].shift(6)
-        data_4.loc[:, 'mom_1_0_L7'] = data_4.groupby('ticker')['mom_1_0'].shift(7)
-        data_4.loc[:, 'mom_1_0_L8'] = data_4.groupby('ticker')['mom_1_0'].shift(8)
-        data_4.loc[:, 'mom_1_0_L9'] = data_4.groupby('ticker')['mom_1_0'].shift(9)
-        data_4.loc[:, 'mom_1_0_L10'] = data_4.groupby('ticker')['mom_1_0'].shift(10)
-        data_4.loc[:, 'mom_1_0_L11'] = data_4.groupby('ticker')['mom_1_0'].shift(11)
-        data_4.loc[:, 'mom_1_0_L12'] = data_4.groupby('ticker')['mom_1_0'].shift(12)
-        data_4.loc[:, 'mom_1_0_L13'] = data_4.groupby('ticker')['mom_1_0'].shift(13)
-        data_4.loc[:, 'mom_1_0_L14'] = data_4.groupby('ticker')['mom_1_0'].shift(14)
-        data_4.loc[:, 'mom_1_0_L15'] = data_4.groupby('ticker')['mom_1_0'].shift(15)
-        data_4.loc[:, 'mom_1_0_L16'] = data_4.groupby('ticker')['mom_1_0'].shift(16)
-        data_4.loc[:, 'mom_1_0_L17'] = data_4.groupby('ticker')['mom_1_0'].shift(17)
-        data_4.loc[:, 'mom_1_0_L18'] = data_4.groupby('ticker')['mom_1_0'].shift(18)
-        data_4.loc[:, 'mom_1_0_L19'] = data_4.groupby('ticker')['mom_1_0'].shift(19)
-        data_4.loc[:, 'mom_1_0_L20'] = data_4.groupby('ticker')['mom_1_0'].shift(20)
-        data_4.loc[:, 'mom_1_0_L21'] = data_4.groupby('ticker')['mom_1_0'].shift(21)
-        data_4.loc[:, 'mom_1_0_L22'] = data_4.groupby('ticker')['mom_1_0'].shift(22)
-        data_4.loc[:, 'mom_1_0_L23'] = data_4.groupby('ticker')['mom_1_0'].shift(23)
-        data_4.loc[:, 'mom_1_0_L24'] = data_4.groupby('ticker')['mom_1_0'].shift(24)
+        for name in mom_feature_names_list:
+            for num in range(1, lag_range):
+                data_4.loc[:, name + '_mom_1_0_L' + str(num)] = data_4.groupby('ticker')[name + '_mom_1_0'].shift(num)
 
         return data_4
 
     @staticmethod
-    def create_modeling_data(momentum_data: pd.DataFrame) -> pd.DataFrame:
+    def create_modeling_data(momentum_data: pd.DataFrame, modeling_data_drop_list: Dict,
+                             model_target: Dict) -> pd.DataFrame:
         """
         This function creates a modeling data set with a categorical
         market cap variable. It creates the target variable as the
@@ -390,7 +475,9 @@ class FeatureEngineering:
         last row as it has no target.
 
         Args:
-            momentum_data:
+            momentum_data: Output of 'create_momentum_factors' method
+            modeling_data_drop_list: List of variables to drop from final data set.
+            model_target: Model target variable.
 
         Returns:
             Pandas dataframe with target variable ready for modeling.
@@ -398,22 +485,14 @@ class FeatureEngineering:
         data = momentum_data
 
         # Drop unnecessary columns
-        data_2 = data.drop(columns=['market_cap',
-                                    'return_index',
-                                    'roll_7day_sum_ret',
-                                    'roll_11day_sum_ret',
-                                    'roll_7day_sum_ret_1m_lag',
-                                    'roll_11day_sum_ret_3m_lag',
-                                    'roll_11day_sum_ret_6m_lag',
-                                    'roll_11day_sum_ret_12m_lag',
-                                    ])
+        data_2 = data.drop(columns=modeling_data_drop_list)
 
         # Create target, move back one-month momentum (which is one-month return)
-        data_2.loc[:, 'target_1m_mom_lead'] = data_2.groupby('ticker')['mom_1_0'].shift(-1)
+        data_2.loc[:, model_target] = data_2.groupby('ticker')['return_mom_1_0'].shift(-1)
 
         # Drop first row as it contains no lagged values
         data_3 = data_2.groupby('ticker').apply(lambda group: group.iloc[1:]).reset_index(drop=True)
-        # Drop last row as it has no target
+        # Drop last 3 rows as they have no target
         data_4 = data_3.groupby('ticker').apply(lambda group: group.iloc[:-1]).reset_index(drop=True)
         # Drop missing values
         data_5 = data_4.dropna()

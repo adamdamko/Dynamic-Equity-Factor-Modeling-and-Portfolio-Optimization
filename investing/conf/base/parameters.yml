@@ -1,47 +1,240 @@
-## THIS FILE HOLDS ALL MODELS_ML_FINAL HYPERPARAMETERS
+############################################### PARAMETERS FILE ########################################################
+###################################### FEATURE ENGINEERING PARAMETERS ##################################################
+# List of variables to create change indices
+change_index_list:
+  - p_b
+  - p_fcf_ttm
 
-# LightGBM: static parameters
+# List of variables to create rolling sums
+sum_list:
+  - return_index
+
+# List of variables to create rolling averages
+avg_list:
+  - p_b_index
+  - p_fcf_ttm_index
+
+# List of variables to create 30-day rolling median
+med30_list:
+  - volume
+
+# List of features for 'create_momentum_factors' method
+momentum_features:
+  - date
+  - ticker
+  - sector
+  - market_cap
+  - market_cap_cat
+  - p_b
+  - p_fcf_ttm
+  - roll_30day_med_volume
+  - return_index
+  - p_b_index
+  - p_fcf_ttm_index
+  - roll_7day_sum_return_index
+  - roll_11day_sum_return_index
+  - roll_7day_sum_return_index_1m_lag
+  - roll_11day_sum_return_index_3m_lag
+  - roll_11day_sum_return_index_6m_lag
+  - roll_11day_sum_return_index_12m_lag
+  - roll_7day_avg_p_b_index
+  - roll_11day_avg_p_b_index
+  - roll_7day_avg_p_b_index_1m_lag
+  - roll_11day_avg_p_b_index_3m_lag
+  - roll_11day_avg_p_b_index_6m_lag
+  - roll_11day_avg_p_b_index_12m_lag
+  - roll_7day_avg_p_fcf_ttm_index
+  - roll_11day_avg_p_fcf_ttm_index
+  - roll_7day_avg_p_fcf_ttm_index_1m_lag
+  - roll_11day_avg_p_fcf_ttm_index_3m_lag
+  - roll_11day_avg_p_fcf_ttm_index_6m_lag
+  - roll_11day_avg_p_fcf_ttm_index_12m_lag
+
+# Lists of rolling features which are the numerator in creating 1-, 3-, 6-, and 12-month momentum values.
+# Each value in these lists must coincide with a value in the corresponding 'mom_denominators_list' below.
+# List for one-month momentum numerator values (separate because these will have lagged values).
+mom_1m_numerators_list:
+  - roll_7day_sum_return_index
+  - roll_7day_avg_p_b_index
+  - roll_7day_avg_p_fcf_ttm_index
+
+# List of 3-, 6-, and 12-month momentum numerator values.
+mom_numerators_list:
+  - roll_11day_sum_return_index
+  - roll_11day_avg_p_b_index
+  - roll_11day_avg_p_fcf_ttm_index
+
+# Lists of rolling features which are the denominator in creating 1-, 3-, 6-, and 12-month momentum values.
+# Each value in these lists must coincide with a value in the corresponding 'mom_numerators_list' above.
+# List for one-month momentum denominator values (separate because these will have lagged values).
+mom_1m_denominators_list:
+  - roll_7day_sum_return_index_1m_lag
+  - roll_7day_avg_p_b_index_1m_lag
+  - roll_7day_avg_p_fcf_ttm_index_1m_lag
+
+# List of 3-, 6-, and 12-month momentum denominator values.
+mom_3m_denominators_list:
+  - roll_11day_sum_return_index_3m_lag
+  - roll_11day_avg_p_b_index_3m_lag
+  - roll_11day_avg_p_fcf_ttm_index_3m_lag
+
+mom_6m_denominators_list:
+  - roll_11day_sum_return_index_6m_lag
+  - roll_11day_avg_p_b_index_6m_lag
+  - roll_11day_avg_p_fcf_ttm_index_6m_lag
+
+mom_12m_denominators_list:
+  - roll_11day_sum_return_index_12m_lag
+  - roll_11day_avg_p_b_index_12m_lag
+  - roll_11day_avg_p_fcf_ttm_index_12m_lag
+
+# List of resulting feature names from momentum feature creation.
+# Each value in this list must coincide with a value in the 'mom_numerators_list' and 'mom_denominators_list' above
+mom_feature_names_list:
+  - return
+  - pb
+  - fcf_ttm
+
+# Top of range for 1-month lagged variables (i.e., 25 means lags 1 to 24).
+lag_range: 25
+
+# List of variables to drop from 'momentum_data' to create final modeling data
+modeling_data_drop_list:
+  - market_cap
+  - return_index
+  - p_b_index
+  - p_fcf_ttm_index
+  - roll_7day_sum_return_index
+  - roll_7day_avg_p_b_index
+  - roll_7day_avg_p_fcf_ttm_index
+  - roll_7day_sum_return_index_1m_lag
+  - roll_7day_avg_p_b_index_1m_lag
+  - roll_7day_avg_p_fcf_ttm_index_1m_lag
+  - roll_11day_sum_return_index
+  - roll_11day_avg_p_b_index
+  - roll_11day_avg_p_fcf_ttm_index
+  - roll_11day_sum_return_index_3m_lag
+  - roll_11day_avg_p_b_index_3m_lag
+  - roll_11day_avg_p_fcf_ttm_index_3m_lag
+  - roll_11day_sum_return_index_6m_lag
+  - roll_11day_avg_p_b_index_6m_lag
+  - roll_11day_avg_p_fcf_ttm_index_6m_lag
+  - roll_11day_sum_return_index_12m_lag
+  - roll_11day_avg_p_b_index_12m_lag
+  - roll_11day_avg_p_fcf_ttm_index_12m_lag
+
+
+################################## THIS HOLDS ALL MODELS_ML_FINAL HYPERPARAMETERS ######################################
+
+# Date to split train/validation sets from the final holdout set.
+# The date given is the date that starts the holdout set (i.e., the train/validation sets will be all dates less than
+# the date given).
+modeling_data_date: '2020-02-01'
+
+# Modeling Target
+model_target:
+  - target_1m_mom_lead
+
+# Modeling features
+model_features:
+  - sector
+  - market_cap_cat
+  - p_b
+  - p_fcf_ttm
+  - roll_30day_med_volume
+  - return_mom_1_0
+  - pb_mom_1_0
+  - fcf_ttm_mom_1_0
+  - return_mom_3_0
+  - pb_mom_3_0
+  - fcf_ttm_mom_3_0
+  - return_mom_6_0
+  - pb_mom_6_0
+  - fcf_ttm_mom_6_0
+  - return_mom_12_0
+  - pb_mom_12_0
+  - fcf_ttm_mom_12_0
+  - return_mom_1_0_L1
+  - return_mom_1_0_L2
+  - return_mom_1_0_L3
+  - return_mom_1_0_L4
+  - return_mom_1_0_L5
+  - return_mom_1_0_L6
+  - return_mom_1_0_L7
+  - return_mom_1_0_L8
+  - return_mom_1_0_L9
+  - return_mom_1_0_L10
+  - return_mom_1_0_L11
+  - return_mom_1_0_L12
+  - return_mom_1_0_L13
+  - return_mom_1_0_L14
+  - return_mom_1_0_L15
+  - return_mom_1_0_L16
+  - return_mom_1_0_L17
+  - return_mom_1_0_L18
+  - return_mom_1_0_L19
+  - return_mom_1_0_L20
+  - return_mom_1_0_L21
+  - return_mom_1_0_L22
+  - return_mom_1_0_L23
+  - return_mom_1_0_L24
+  - pb_mom_1_0_L1
+  - pb_mom_1_0_L2
+  - pb_mom_1_0_L3
+  - pb_mom_1_0_L4
+  - pb_mom_1_0_L5
+  - pb_mom_1_0_L6
+  - pb_mom_1_0_L7
+  - pb_mom_1_0_L8
+  - pb_mom_1_0_L9
+  - pb_mom_1_0_L10
+  - pb_mom_1_0_L11
+  - pb_mom_1_0_L12
+  - pb_mom_1_0_L13
+  - pb_mom_1_0_L14
+  - pb_mom_1_0_L15
+  - pb_mom_1_0_L16
+  - pb_mom_1_0_L17
+  - pb_mom_1_0_L18
+  - pb_mom_1_0_L19
+  - pb_mom_1_0_L20
+  - pb_mom_1_0_L21
+  - pb_mom_1_0_L22
+  - pb_mom_1_0_L23
+  - pb_mom_1_0_L24
+  - fcf_ttm_mom_1_0_L1
+  - fcf_ttm_mom_1_0_L2
+  - fcf_ttm_mom_1_0_L3
+  - fcf_ttm_mom_1_0_L4
+  - fcf_ttm_mom_1_0_L5
+  - fcf_ttm_mom_1_0_L6
+  - fcf_ttm_mom_1_0_L7
+  - fcf_ttm_mom_1_0_L8
+  - fcf_ttm_mom_1_0_L9
+  - fcf_ttm_mom_1_0_L10
+  - fcf_ttm_mom_1_0_L11
+  - fcf_ttm_mom_1_0_L12
+  - fcf_ttm_mom_1_0_L13
+  - fcf_ttm_mom_1_0_L14
+  - fcf_ttm_mom_1_0_L15
+  - fcf_ttm_mom_1_0_L16
+  - fcf_ttm_mom_1_0_L17
+  - fcf_ttm_mom_1_0_L18
+  - fcf_ttm_mom_1_0_L19
+  - fcf_ttm_mom_1_0_L20
+  - fcf_ttm_mom_1_0_L21
+  - fcf_ttm_mom_1_0_L22
+  - fcf_ttm_mom_1_0_L23
+  - fcf_ttm_mom_1_0_L24
+
+
+## LightGBM: static parameters
 lgbm_static_params:
     boosting_type: 'dart'
     extra_trees: True
     n_jobs: 23
-    n_iter: 100
+    n_iter: 400
     scoring: 'neg_root_mean_squared_error'
-    early_stopping_round: 50
-
-# LightGBM features
-lgbm_features:
-      - sector
-      - market_cap_cat
-      - roll_30day_med_vol
-      - mom_1_0
-      - mom_3_0
-      - mom_6_0
-      - mom_12_0
-      - mom_1_0_L1
-      - mom_1_0_L2
-      - mom_1_0_L3
-      - mom_1_0_L4
-      - mom_1_0_L5
-      - mom_1_0_L6
-      - mom_1_0_L7
-      - mom_1_0_L8
-      - mom_1_0_L9
-      - mom_1_0_L10
-      - mom_1_0_L11
-      - mom_1_0_L12
-      - mom_1_0_L13
-      - mom_1_0_L14
-      - mom_1_0_L15
-      - mom_1_0_L16
-      - mom_1_0_L17
-      - mom_1_0_L18
-      - mom_1_0_L19
-      - mom_1_0_L20
-      - mom_1_0_L21
-      - mom_1_0_L22
-      - mom_1_0_L23
-      - mom_1_0_L24
 
 
 ## LIGHTGBM COARSE TUNING
@@ -78,7 +271,7 @@ lgbm_coarse_best_params:
 lgbm_fine_tune_params:
     lgbm_model__n_estimators: [ 50,  60,  70,  80,  90, 100, 110, 120, 130, 140, 150, 160, 170,
                                180, 190, 200, 210, 220, 230, 240, 250, 260, 270, 280, 290, 300,
-                               310, 320, 330, 340, 350 ]
+                               310, 320, 330, 340, 350, 360, 370, 380, 390, 400, 410, 420, 430, 440, 450 ]
     lgbm_model__learning_rate: [ 0.01, 0.012, 0.013, 0.014, 0.015, 0.016, 0.017, 0.018, 0.019, 0.02 ]
     lgbm_model__num_leaves: [ 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34,
                               36, 38, 40, 42, 44, 46, 48, 50 ]
@@ -90,17 +283,55 @@ lgbm_fine_tune_params:
 
 
 
-### Model hyperparameters ###
-# LightGBM best fine-tuning parameters
+### Model Best Hyperparameters ###
+## LightGBM best fine-tuning parameters ##
 lgbm_fine_best_params:
-    n_estimators: 140
-    learning_rate: 0.012
-    max_depth: 350
-    reg_lambda: 10.625
-    num_leaves: 6
-    max_bin: 460
-    random_state: 126502
-### Model hyperparameters ###
+    n_estimators: 782
+    learning_rate: 0.074
+    num_leaves: 12
+    min_data_in_leaf: 22
+    reg_lambda: 16.667
+    random_state: 638552
+    boosting_type: 'dart'
+    extra_trees: True
+    n_jobs: 23
+
+###  End Model hyperparameters ###
+
+
+
+###################################### MODELS_ML_HOLDOUT_EVAL PARAMETERS ###############################################
+# Monthly dates to loop through for validation. Train on everything less than each date and predict on next date's data.
+# Use 'LightGBM best fine-tuning parameters' parameter
+# This replicates real-world use.
+# Train dates
+validation_train_dates_list: [ '2020-02-01', '2020-03-01', '2020-04-01', '2020-05-01', '2020-06-01', '2020-07-01',
+                               '2020-08-01', '2020-09-01', '2020-10-01', '2020-11-01', '2020-12-01', '2021-01-01',
+                               '2021-02-01', '2021-03-01', '2021-04-01', '2021-05-01', '2021-06-01', '2021-07-01',
+                               '2021-08-01' ]
+
+# Test dates
+validation_test_dates_list: [ '2020-03-01', '2020-04-01', '2020-05-01', '2020-06-01', '2020-07-01', '2020-08-01',
+                              '2020-09-01', '2020-10-01', '2020-11-01', '2020-12-01', '2021-01-01', '2021-02-01',
+                              '2021-03-01', '2021-04-01', '2021-05-01', '2021-06-01', '2021-07-01', '2021-08-01',
+                              '2021-09-01' ]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

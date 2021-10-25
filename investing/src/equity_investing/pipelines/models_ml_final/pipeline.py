@@ -9,25 +9,25 @@ def create_test_train_validation_sets_pipeline(**kwargs):
         [
             node(
                 func=TrainTestValidation.holdout_set,
-                inputs=['modeling_data'],
+                inputs=['modeling_data', 'params:modeling_data_date'],
                 outputs='holdout_data',
                 name='holdout_data_node',
             ),
             node(
                 func=TrainTestValidation.train_val_x,
-                inputs=['modeling_data'],
+                inputs=['modeling_data', 'params:modeling_data_date'],
                 outputs='train_x_data',
                 name='train_x_data_node',
             ),
             node(
                 func=TrainTestValidation.train_val_y,
-                inputs=['modeling_data'],
+                inputs=['modeling_data', 'params:modeling_data_date', 'params:model_target'],
                 outputs='train_y_data',
                 name='train_y_data_node',
             ),
             node(
                 func=TrainTestValidation.time_series_split,
-                inputs=['modeling_data'],
+                inputs=['modeling_data', 'params:modeling_data_date'],
                 outputs='time_series_split_list',
                 name='time_series_split_list_node',
             ),
@@ -41,7 +41,7 @@ def create_coarse_hyperparameter_tuning_pipeline(**kwargs):
             node(
                 func=HyperparameterTuning.train_cv_lgbm,
                 inputs=['train_x_data', 'train_y_data', 'time_series_split_list', 'params:lgbm_static_params',
-                        'params:lgbm_coarse_tune_params', 'params:lgbm_features'],
+                        'params:lgbm_coarse_tune_params', 'params:model_features'],
                 outputs='lgbm_coarse_cv_model',
                 name='lgbm_coarse_cv_model_node',
             ),
@@ -61,7 +61,7 @@ def create_fine_hyperparameter_tuning_pipeline(**kwargs):
             node(
                 func=HyperparameterTuning.train_cv_lgbm,
                 inputs=['train_x_data', 'train_y_data', 'time_series_split_list', 'params:lgbm_static_params',
-                        'params:lgbm_fine_tune_params', 'params:lgbm_features'],
+                        'params:lgbm_fine_tune_params', 'params:model_features'],
                 outputs='lgbm_fine_cv_model',
                 name='lgbm_fine_cv_model_node',
             ),
@@ -74,7 +74,7 @@ def create_fine_hyperparameter_tuning_pipeline(**kwargs):
             node(
                 func=HyperparameterTuning.random_state_test,
                 inputs=['train_x_data', 'train_y_data', 'time_series_split_list', 'params:lgbm_static_params',
-                        'params:lgbm_fine_best_params', 'params:lgbm_features'],
+                        'params:lgbm_fine_best_params', 'params:model_features'],
                 outputs='lgbm_fine_random_state_test',
                 name='lgbm_fine_random_state_test',
             ),

@@ -1,8 +1,7 @@
-# Here you can define all your data sets by using simple YAML syntax.
-#
-# Documentation for this file format can be found in "The Data Catalog"
-# Link: https://kedro.readthedocs.io/en/stable/05_data/01_data_catalog.html
+################################################# DATA CATALOG #########################################################
+################################################### RAW DATA ###########################################################
 
+## SimFin data pulls from PostgreSQL ##
 # SimFin 'us-companies' dataset
 companies:
   type: pandas.SQLQueryDataSet
@@ -21,20 +20,129 @@ prices:
   credentials: investment_credentials
   sql: select * from investments.fundamentals."us-shareprices-daily"
 
-# Joined data from companies, industries, and prices
-#raw_joined_data:
-#  type: pandas.CSVDataSet
-#  filepath: data/02_intermediate/raw_joined_data.csv
+# SimFin 'us-derived-shareprices-daily-asreported' dataset
+ratios:
+  type: pandas.SQLQueryDataSet
+  credentials: investment_credentials
+  sql: select * from investments.fundamentals."us-derived-shareprices-daily-asreported"
 
-# Cleaned data from raw_joined_data
-#intro_cleaned_data:
-#  type: pandas.CSVDataSet
-#  filepath: data/02_intermediate/intro_cleaned_data.csv
 
-# Cleaned data from raw_joined_data
+################################################ INTERMEDIATE DATA #####################################################
+# Cleaned data visual from raw_joined_data
 cleaned_data_eda:
   type: pickle.PickleDataSet
   filepath: data/02_intermediate/cleaned_data_eda.html
+
+
+#################################################### FEATURE DATA ######################################################
+# Modeling data
+modeling_data:
+  type: pandas.CSVDataSet
+  filepath: data/04_feature/modeling_data.csv
+
+# Cleaned data from raw_joined_data
+eda_modeling_data:
+  type: pickle.PickleDataSet
+  filepath: data/04_feature/eda_modeling_data.html
+
+
+################################################ MODEL INPUT DATA ######################################################
+# Holdout data
+holdout_data:
+  type: pandas.CSVDataSet
+  filepath: data/05_model_input/holdout_data.csv
+  load_args:
+    dtype: { 'sector': category,
+             'market_cap_cat': category }
+
+# Train X data
+train_x_data:
+  type: pandas.CSVDataSet
+  filepath: data/05_model_input/train_x_data.csv
+  load_args:
+    dtype: {'sector': category,
+            'market_cap_cat': category}
+
+# Train y data
+train_y_data:
+  type: pandas.CSVDataSet
+  filepath: data/05_model_input/train_y_data.csv
+
+# Time-series split list
+time_series_split_list:
+  type: pickle.PickleDataSet
+  filepath: data/05_model_input/time_series_split_list.pickle
+
+
+################################################ MODELS DATA ###########################################################
+# Exploratory models_ml_final: random forest
+rfr_model:
+  type: pickle.PickleDataSet
+  filepath: data/06_models/rfr_model.pickle
+
+# Exploratory models_ml_final: xgboost
+xgb_model:
+  type: pickle.PickleDataSet
+  filepath: data/06_models/xgb_model.pickle
+
+# LightGBM coarse tune cv
+lgbm_coarse_cv_model:
+  type: pickle.PickleDataSet
+  filepath: data/06_models/lgbm_coarse_cv_model.pickle
+
+# LightGBM fine-tune cv
+lgbm_fine_cv_model:
+  type: pickle.PickleDataSet
+  filepath: data/06_models/lgbm_fine_cv_model.pickle
+
+
+################################################ MODEL OUTPUT DATA #####################################################
+# LightGBM course tune cv hyperparameter visualization
+lgbm_coarse_cv_model_hyperparameters:
+  type: matplotlib.MatplotlibWriter
+  filepath: data/07_model_output/lgbm_coarse_cv_model_hyperparameters.png
+
+# LightGBM fine tune cv hyperparameter visualization
+lgbm_fine_cv_model_hyperparameters:
+  type: matplotlib.MatplotlibWriter
+  filepath: data/07_model_output/lgbm_fine_cv_model_hyperparameters.png
+
+# Model Holdout results
+holdout_results_data:
+  type: pandas.CSVDataSet
+  filepath: data/07_model_output/holdout_results_data.csv
+
+
+
+########################################################################################################################
+########################################### Not Saved, Old or Other Formats ############################################
+########################################################################################################################
+
+## SimFin us-shareprices daily bulk python api download
+#prices:
+#  type: pandas.CSVDataSet
+#  filepath: data/01_raw/prices_data.csv
+#
+## SimFin companies bulk python api download
+#companies:
+#  type: pandas.CSVDataSet
+#  filepath: data/01_raw/companies_data.csv
+#
+## SimFin industries bulk python api download
+#industries:
+#  type: pandas.CSVDataSet
+#  filepath: data/01_raw/industries_data.csv
+#
+## SimFin shareprice ratios bulk python api download
+#shareprice_ratios:
+#  type: pandas.CSVDataSet
+#  filepath: data/01_raw/shareprice_ratios_data.csv
+
+
+## Joined data from companies, industries, prices, and shareprice_ratios
+#raw_joined_data:
+#  type: pandas.CSVDataSet
+#  filepath: data/02_intermediate/raw_joined_data.csv
 
 # Market cap data with market cap categorical variable
 #market_cap_data:
@@ -81,71 +189,9 @@ cleaned_data_eda:
 #  type: pandas.CSVDataSet
 #  filepath: data/04_feature/momentum_data.csv
 
-# Modeling data
-modeling_data:
-  type: pandas.CSVDataSet
-  filepath: data/04_feature/modeling_data.csv
-  load_args:
-    dtype: { 'sector': category,
-             'market_cap_cat': category }
-
-# Cleaned data from raw_joined_data
-eda_modeling_data:
-  type: pickle.PickleDataSet
-  filepath: data/04_feature/eda_modeling_data.html
-
-# Holdout data
-holdout_data:
-  type: pandas.CSVDataSet
-  filepath: data/05_model_input/holdout_data.csv
-  load_args:
-    dtype: { 'sector': category,
-             'market_cap_cat': category }
-
-# Train X data
-train_x_data:
-  type: pandas.CSVDataSet
-  filepath: data/05_model_input/train_x_data.csv
-  load_args:
-    dtype: {'sector': category,
-            'market_cap_cat': category}
-
-# Train y data
-train_y_data:
-  type: pandas.CSVDataSet
-  filepath: data/05_model_input/train_y_data.csv
-
-# Time-series split list
-time_series_split_list:
-  type: pickle.PickleDataSet
-  filepath: data/05_model_input/time_series_split_list.pickle
-
-# Exploratory models_ml_final: random forest
-rfr_model:
-  type: pickle.PickleDataSet
-  filepath: data/06_models/rfr_model.pickle
-
-# Exploratory models_ml_final: xgboost
-xgb_model:
-  type: pickle.PickleDataSet
-  filepath: data/06_models/xgb_model.pickle
-
-# LightGBM coarse tune cv
-lgbm_coarse_cv_model:
-  type: pickle.PickleDataSet
-  filepath: data/06_models/lgbm_coarse_cv_model.pickle
-
-# LightGBM course tune cv hyperparameter visualization
-lgbm_coarse_cv_model_hyperparameters:
-  type: matplotlib.MatplotlibWriter
-  filepath: data/07_model_output/lgbm_coarse_cv_model_hyperparameters.png
-
-# LightGBM fine-tune cv
-lgbm_fine_cv_model:
-  type: pickle.PickleDataSet
-  filepath: data/06_models/lgbm_fine_cv_model.pickle
-
-# LightGBM fine tune cv hyperparameter visualization
-lgbm_fine_cv_model_hyperparameters:
-  type: matplotlib.MatplotlibWriter
-  filepath: data/07_model_output/lgbm_fine_cv_model_hyperparameters.png
+## Cleaned data from raw_joined_data
+#intro_cleaned_data:
+#  type: pandas.CSVDataSet
+#  filepath: data/02_intermediate/intro_cleaned_data.csv
+#  load_args: {encoding: 'ISO-8859-1'}
+#  save_args: {encoding: 'ISO-8859-1'}
