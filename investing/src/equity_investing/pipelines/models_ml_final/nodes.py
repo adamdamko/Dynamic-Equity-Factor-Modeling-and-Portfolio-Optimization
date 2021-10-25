@@ -34,6 +34,9 @@ from sklearn.model_selection import RandomizedSearchCV
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.compose import TransformedTargetRegressor
+from sklearn.metrics import mean_absolute_percentage_error
+from sklearn.metrics import mean_squared_error
+from sklearn.metrics import median_absolute_error
 
 
 class TrainTestValidation:
@@ -43,36 +46,42 @@ class TrainTestValidation:
 
     """
     @staticmethod
-    def holdout_set(modeling_data: pd.DataFrame) -> pd.DataFrame:
+    def holdout_set(modeling_data: pd.DataFrame, modeling_data_date: Dict) -> pd.DataFrame:
         """
         This function creates the holdout data set.
 
         Args:
-            modeling_data:
+            modeling_data: Output from 'feature_engineering' pipeline.
+            modeling_data_date: Date to split train/validation sets from the final holdout set.
+                                The date given is the date that starts the holdout set (i.e., the
+                                train/validation sets will be all dates less than the date given).
 
         Returns:
             Pandas holdout dataframe.
 
         """
-        data_2 = modeling_data[modeling_data['date'] >= '2020-02-01']
+        data_2 = modeling_data[modeling_data['date'] >= modeling_data_date]
         data_2.loc[:, 'sector'] = data_2.loc[:, 'sector'].astype('category')
         data_2.loc[:, 'market_cap_cat'] = data_2.loc[:, 'market_cap_cat'].astype('category')
         data_2 = data_2.reset_index(drop=True)
         return data_2
 
     @staticmethod
-    def train_val_x(modeling_data: pd.DataFrame) -> pd.DataFrame:
+    def train_val_x(modeling_data: pd.DataFrame, modeling_data_date: Dict) -> pd.DataFrame:
         """
         This functions creates the predictor variable train/test set.
 
         Args:
-            modeling_data:
+            modeling_data: Output from 'feature_engineering' pipeline.
+            modeling_data_date: Date to split train/validation sets from the final holdout set.
+                                The date given is the date that starts the holdout set (i.e., the
+                                train/validation sets will be all dates less than the date given).
 
         Returns:
             Pandas dataframe.
         """
         data_2 = modeling_data.reset_index(drop=True)
-        data_2 = data_2[data_2['date'] < '2020-02-01']
+        data_2 = data_2[data_2['date'] < modeling_data_date]
         data_2 = data_2.reset_index(drop=True)
         # Train X data
         data_2.loc[:, 'sector'] = data_2.loc[:, 'sector'].astype('category')
@@ -94,39 +103,46 @@ class TrainTestValidation:
         return x_train
 
     @staticmethod
-    def train_val_y(modeling_data: pd.DataFrame) -> pd.DataFrame:
+    def train_val_y(modeling_data: pd.DataFrame, modeling_data_date: Dict, model_target: Dict) -> pd.DataFrame:
         """
         This function creates the target train/test variable.
 
         Args:
-            modeling_data:
+            modeling_data: Output from 'feature_engineering' pipeline.
+            modeling_data_date: Date to split train/validation sets from the final holdout set.
+                                The date given is the date that starts the holdout set (i.e., the
+                                train/validation sets will be all dates less than the date given).
+            model_target: Model target variable.
 
         Returns:
              Pandas dataframe
         """
         data_2 = modeling_data.reset_index(drop=True)
-        data_2 = data_2[data_2['date'] < '2020-02-01']
+        data_2 = data_2[data_2['date'] < modeling_data_date]
         data_2 = data_2.reset_index(drop=True)
         # Train y
-        y_train = pd.DataFrame(data_2['target_1m_mom_lead'])
+        y_train = pd.DataFrame(data_2[model_target])
         # Reset index to match with splits
         y_train = y_train.reset_index(drop=True)
 
         return y_train
 
     @staticmethod
-    def time_series_split(modeling_data: pd.DataFrame) -> list:
+    def time_series_split(modeling_data: pd.DataFrame, modeling_data_date: Dict) -> list:
         """
         This function creates a list for time-series splits for cross-validation.
 
         Args:
-            modeling_data:
+            modeling_data: Output from 'feature_engineering' pipeline.
+            modeling_data_date: Date to split train/validation sets from the final holdout set.
+                                The date given is the date that starts the holdout set (i.e., the
+                                train/validation sets will be all dates less than the date given).
 
         Returns:
             List of indices for time-series splits used for cross-validation.
         """
         data_2 = modeling_data.reset_index(drop=True)
-        data_2 = data_2[data_2['date'] < '2020-02-01']
+        data_2 = data_2[data_2['date'] < modeling_data_date]
         data_2 = data_2.reset_index(drop=True)
         train_data = data_2
 
@@ -138,7 +154,7 @@ class TrainTestValidation:
         train_3 = (train_data[train_data['date'] < '2015-01-01']).index
         test_3 = (train_data[(train_data['date'] >= '2018-01-01') & (train_data['date'] < '2019-07-01')]).index
         train_4 = (train_data[train_data['date'] < '2016-01-01']).index
-        test_4 = (train_data[(train_data['date'] >= '2019-07-01') & (train_data['date'] < '2020-02-01')]).index
+        test_4 = (train_data[(train_data['date'] >= '2019-07-01') & (train_data['date'] < modeling_data_date)]).index
 
         # Put train and validation sets in lists
         train_list = [train_1, train_2, train_3, train_4]
@@ -157,7 +173,7 @@ class HyperparameterTuning:
     """
     @staticmethod
     def train_cv_lgbm(train_x_data: pd.DataFrame, train_y_data: pd.DataFrame, time_series_split_list: list,
-                      params_static: Dict, params: Dict, params_features):
+                      params_static: Dict, params: Dict, params_features: Dict):
         """
         This performs cross-validation for hyperparameter tuning.
 
@@ -187,8 +203,7 @@ class HyperparameterTuning:
         # Instantiate regressor
         lgbm = lgb.LGBMRegressor(boosting_type=params_static['boosting_type'],
                                  extra_trees=params_static['extra_trees'],
-                                 n_jobs=params_static['n_jobs'],
-                                 early_stopping_round=params_static['early_stopping_round']
+                                 n_jobs=params_static['n_jobs']
                                  )
 
         # Create the parameter dictionary: params
@@ -248,7 +263,7 @@ class HyperparameterTuning:
 
     @staticmethod
     def random_state_test(train_x_data: pd.DataFrame, train_y_data: pd.DataFrame, time_series_split_list: list,
-                          params_static: Dict, params: Dict, params_features):
+                          params_static: Dict, params: Dict, params_features: Dict):
         """
         This performs random-state cross-validation for tuning.
 

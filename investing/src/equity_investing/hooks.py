@@ -27,8 +27,9 @@
 # limitations under the License.
 
 """Project hooks."""
+import os
 from typing import Any, Dict, Iterable, Optional
-
+from kedro.config import TemplatedConfigLoader
 from kedro.config import ConfigLoader
 from kedro.framework.hooks import hook_impl
 from kedro.io import DataCatalog
@@ -40,7 +41,13 @@ class ProjectHooks:
     def register_config_loader(
         self, conf_paths: Iterable[str], env: str, extra_params: Dict[str, Any],
     ) -> ConfigLoader:
-        return ConfigLoader(conf_paths)
+        return TemplatedConfigLoader(
+            conf_paths,
+            globals_dict={
+                "API_DIRECTORY": os.environ.get("API_DIRECTORY"),
+                "API_KEY": os.environ.get("API_KEY"),
+            },
+        )
 
     @hook_impl
     def register_catalog(
