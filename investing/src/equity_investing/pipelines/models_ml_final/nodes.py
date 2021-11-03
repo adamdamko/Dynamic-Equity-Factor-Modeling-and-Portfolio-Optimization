@@ -248,7 +248,7 @@ class HyperparameterTuning:
 
         param_list = ['param_lgbm_model__n_estimators',
                       'param_lgbm_model__learning_rate',
-                      'param_lgbm_model__reg_lambda',
+                      'param_lgbm_model__max_depth',
                       'param_lgbm_model__num_leaves',
                       'param_lgbm_model__min_data_in_leaf']
 
@@ -256,8 +256,8 @@ class HyperparameterTuning:
         for ax, param in zip(axes, param_list):
             ax.scatter(lgbm_cv_results[param], lgbm_cv_results['mean_test_score'], c=['blue'])
             ax.set(xlabel='{}'.format(param),
-                   ylabel='MAPE',
-                   title='MAPE for different {}s'.format(param))
+                   ylabel='RMSE',
+                   title='RMSE for different {}s'.format(param))
 
         return plt
 
@@ -293,12 +293,10 @@ class HyperparameterTuning:
         # Instantiate regressor
         lgbm_seed = lgb.LGBMRegressor(n_estimators=params['n_estimators'],
                                       learning_rate=params['learning_rate'],
-                                      reg_lambda=params['reg_lambda'],
                                       num_leaves=params['num_leaves'],
                                       max_depth=params['max_depth'],
-                                      max_bin=params['max_bin'],
+                                      min_data_in_leaf=params['min_data_in_leaf'],
                                       boosting_type=params_static['boosting_type'],
-                                      extra_trees=params_static['extra_trees'],
                                       n_jobs=params_static['n_jobs']
                                       )
 

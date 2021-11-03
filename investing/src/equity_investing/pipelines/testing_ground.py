@@ -39,10 +39,10 @@ from sklearn.metrics import median_absolute_error
 
 
 #%% Get train data and splits
-X_train = pd.read_csv('C:/Users/damko/PycharmProjects/Equity_Investing/investing/data/05_model_input/train_x_data.csv')
-y_train = pd.read_csv('C:/Users/damko/PycharmProjects/Equity_Investing/investing/data/05_model_input/train_y_data.csv')
+X_train = pd.read_csv('/investing/data/05_model_input/train_x_data.csv')
+y_train = pd.read_csv('/investing/data/05_model_input/train_y_data.csv')
 tscv = pd.read_pickle(
-    'C:/Users/damko/PycharmProjects/Equity_Investing/investing/data/05_model_input/time_series_split_list.pickle'
+    '/investing/data/05_model_input/time_series_split_list.pickle'
 )
 
 #%% Make categorical vars as pd.Categorical
@@ -54,15 +54,14 @@ X_train.loc[:, 'market_cap_cat'] = X_train.loc[:, 'market_cap_cat'].astype('cate
 # LIGHTGBM PIPELINE
 # Instantiate regressor
 lgbm = lgb.LGBMRegressor(boosting_type='dart',
-                         extra_trees=True,
                          n_jobs=23)
 
 # Create the parameter dictionary: params
-lgbm_param_grid = {'lgbm_model__n_estimators': np.linspace(50, 750, 30, dtype=int),  # alias: num_iterations
-                   'lgbm_model__learning_rate': np.round(np.linspace(0.01, 0.08, 25), 3),
-                   'lgbm_model__reg_lambda': np.round(np.linspace(5, 25, 25), 3),  # alias: lambda_l2
-                   'lgbm_model__num_leaves': np.linspace(10, 75, 25, dtype=int),
-                   'lgbm_model__min_data_in_leaf': np.linspace(2, 500, 30, dtype=int)
+lgbm_param_grid = {'lgbm_model__n_estimators': np.linspace(50, 250, 30, dtype=int),
+                   'lgbm_model__learning_rate': [0.0006, 0.0007, 0.0008, 0.0009, 0.001, 0.002],
+                   'lgbm_model__max_depth': [2, 3, 4, 5, 6, 7, 8, 9, 10],
+                   'lgbm_model__num_leaves': [4, 8, 16, 32, 64, 128, 256, 512, 1024],
+                   'lgbm_model__min_data_in_leaf': np.linspace(2000, 5000, 30, dtype=int)
                    }
 
 # Setup the pipeline steps: steps
@@ -90,7 +89,7 @@ lgbm_randomized.fit(X_train, y_train)  # categorical_feature is auto
 # Print the best parameters and lowest MAE
 print("Best estimators found: ", lgbm_randomized.regressor_.best_estimator_)
 print("Best parameters found: ", lgbm_randomized.regressor_.best_params_)
-print("Lowest MAPE found: ", np.abs(lgbm_randomized.regressor_.best_score_))
+print("Lowest RMSE found: ", np.abs(lgbm_randomized.regressor_.best_score_))
 # Get feature importance
 lgb.plot_importance(lgbm_randomized.regressor_.best_estimator_.named_steps['lgbm_model'], max_num_features=40)
 plt.rcParams['figure.figsize'] = (20, 15)
@@ -105,15 +104,15 @@ lgbm_cv_results = pd.DataFrame(lgbm_randomized.regressor_.cv_results_)
 def visualize_hyperparameter(name):
     plt.scatter(lgbm_cv_results[name], lgbm_cv_results['mean_test_score'], c=['blue'])
     plt.gca().set(xlabel='{}'.format(name),
-                  ylabel='MAPE',
-                  title='MAPE for different {}s'.format(name))
+                  ylabel='RMSE',
+                  title='RMSE for different {}s'.format(name))
     plt.gca().set_ylim()
     plt.show()
 
 
 param_list = ['param_lgbm_model__n_estimators',
               'param_lgbm_model__learning_rate',
-              'param_lgbm_model__reg_lambda',
+              'param_lgbm_model__max_depth',
               'param_lgbm_model__num_leaves',
               'param_lgbm_model__min_data_in_leaf']
 
@@ -172,8 +171,8 @@ lgbm_seed_cv_results = pd.DataFrame(lgbm_seed_randomized.cv_results_)
 
 
 #%% Load model cv's
-modeling_data = pd.read_csv(
-    'C:/Users/damko/PycharmProjects/Equity_Investing/investing/data/04_feature/modeling_data.csv'
+modeling_data = pd.read_parquet(
+    '/investing/data/04_feature/modeling_data.csv'
 )
 
 #%% Holdout eval testing
@@ -231,13 +230,12 @@ for train, test in list(zip(validation_train_dates_list, validation_test_dates_l
 
     # LIGHTGBM MODEL
     lgb_model = TransformedTargetRegressor(lgb.LGBMRegressor(
-        n_estimators=122,
-        learning_rate=0.01,
-        reg_lambda=14.167,
-        num_leaves=75,
-        min_data_in_leaf=259,
+        n_estimators=250,
+        learning_rate=0.0006,
+        max_depth=7,
+        num_leaves=80,
+        min_data_in_leaf=5000,
         boosting_type='dart',
-        extra_trees=True,
         n_jobs=23,
         random_state=638552),
         transformer=StandardScaler()
@@ -260,5 +258,36 @@ final_results = pd.DataFrame()
 for result in results:
     final_results = pd.concat([final_results, result], axis=0)
 
+# Rename preds column
+final_results = final_results.rename(columns={0: 'predictions'})
 
 
+#%%
+holdout_data = pd.read_parquet(
+    'C:/Users/damko/PycharmProjects/Equity_Investing/investing/data/07_model_output/holdout_results_data.parquet'
+)
+
+#%% Calculate summary output
+final_results2 = final_results.reset_index()
+
+top_preds_returns = final_results2.sort_values(['date', 'predictions'], ascending=False)
+top_preds = top_preds_returns.groupby('date')['predictions'].nlargest(100).reset_index().set_index('level_1')
+top_preds_returns = pd.merge(top_preds, top_preds_returns, how='left', left_index=True, right_index=True)
+top_preds_returns = top_preds_returns.drop(columns=['date_x', 'predictions_x']).\
+    rename(columns={'date_y': 'date', 'predictions_y': 'predictions'})
+
+# Join returns
+top_preds_returns2 = top_preds_returns.groupby('date').agg({'target_1m_mom_lead': 'mean'}).\
+    rename(columns={'target_1m_mom_lead': 'top_preds_returns'})
+total_market_returns = final_results2.groupby('date').agg({'target_1m_mom_lead': 'mean'})
+returns_comp = pd.merge(total_market_returns, top_preds_returns2, how='left', left_index=True, right_index=True)
+returns_comp.loc[:, 'market_rolling_return'] = returns_comp['target_1m_mom_lead'].rolling(window=19, min_periods=1).\
+    apply(np.prod)
+returns_comp.loc[:, 'top_preds_rolling_return'] = returns_comp['top_preds_returns'].rolling(window=19, min_periods=1).\
+    apply(np.prod)
+
+
+#%%
+preds_tickers = top_preds_returns[top_preds_returns['date'] == '2021-02-26']
+preds_tickers2 = top_preds_returns[top_preds_returns['date'] == '2021-04-30']
+print(preds_tickers[preds_tickers['ticker'].isin(list(preds_tickers2['ticker']))])
