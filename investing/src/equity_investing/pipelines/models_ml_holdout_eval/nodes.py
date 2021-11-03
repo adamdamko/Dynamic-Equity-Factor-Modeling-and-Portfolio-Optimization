@@ -91,11 +91,10 @@ class HoldoutValidation:
             lgb_model = TransformedTargetRegressor(lgb.LGBMRegressor(
                                                                 n_estimators=lgbm_fine_best_params['n_estimators'],
                                                                 learning_rate=lgbm_fine_best_params['learning_rate'],
-                                                                reg_lambda=lgbm_fine_best_params['reg_lambda'],
+                                                                max_depth=lgbm_fine_best_params['max_depth'],
                                                                 num_leaves=lgbm_fine_best_params['num_leaves'],
                                                                 min_data_in_leaf=lgbm_fine_best_params['num_leaves'],
                                                                 boosting_type=lgbm_fine_best_params['boosting_type'],
-                                                                extra_trees=lgbm_fine_best_params['extra_trees'],
                                                                 n_jobs=lgbm_fine_best_params['n_jobs'],
                                                                 random_state=lgbm_fine_best_params['random_state']
             ),
@@ -119,4 +118,63 @@ class HoldoutValidation:
         for result in results:
             final_results = pd.concat([final_results, result], axis=0)
 
+        # Rename preds column
+        final_results = final_results.rename(columns={0: 'predictions'})
+
         return final_results
+
+    @staticmethod
+    def top_predictions_view(holdout_results_data: pd.DataFrame) -> pd.DataFrame:
+        """
+        This function creates the target train/test variable.
+
+        Args:
+            holdout_results_data: Results of holdout data testing.
+
+        Returns:
+             Pandas dataframe of top 100 predictions per month only.
+        """
+        # Calculate summary output
+        final_results2 = holdout_results_data.reset_index()
+        # Get top 100 predictions per month only view
+        top_preds_returns = final_results2.sort_values(['date', 'predictions'], ascending=False)
+        top_preds = top_preds_returns.groupby('date')['predictions'].nlargest(100).reset_index().set_index('level_1')
+        top_preds_returns = pd.merge(top_preds, top_preds_returns, how='left', left_index=True, right_index=True)
+        top_preds_returns = top_preds_returns.drop(columns=['date_x', 'predictions_x']). \
+            rename(columns={'date_y': 'date', 'predictions_y': 'predictions'})
+
+        return top_preds_returns
+
+    @staticmethod
+    def performance_summary(holdout_results_data: pd.DataFrame) -> pd.DataFrame:
+        """
+        This function creates the target train/test variable.
+
+        Args:
+            holdout_results_data: Results of holdout data testing.
+
+        Returns:
+             Pandas dataframe of performance summary of market and top predictions over
+             the holdout period.
+        """
+        # Calculate summary output
+        final_results = holdout_results_data.reset_index()
+        # Get top 100 predictions per month only view
+        top_preds_returns = final_results.sort_values(['date', 'predictions'], ascending=False)
+        top_preds = top_preds_returns.groupby('date')['predictions'].nlargest(100).reset_index().set_index('level_1')
+        top_preds_returns = pd.merge(top_preds, top_preds_returns, how='left', left_index=True, right_index=True)
+        top_preds_returns = top_preds_returns.drop(columns=['date_x', 'predictions_x']). \
+            rename(columns={'date_y': 'date', 'predictions_y': 'predictions'})
+        # Join returns
+        top_preds_returns2 = top_preds_returns.groupby('date').agg({'target_1m_mom_lead': 'mean'}). \
+            rename(columns={'target_1m_mom_lead': 'top_preds_returns'})
+        total_market_returns = final_results.groupby('date').agg({'target_1m_mom_lead': 'mean'})
+        returns_comp = pd.merge(total_market_returns, top_preds_returns2, how='left', left_index=True, right_index=True)
+        returns_comp.loc[:, 'market_rolling_return'] = returns_comp['target_1m_mom_lead'].rolling(window=19,
+                                                                                                  min_periods=1). \
+            apply(np.prod)
+        returns_comp.loc[:, 'top_preds_rolling_return'] = returns_comp['top_preds_returns'].rolling(window=19,
+                                                                                                    min_periods=1). \
+            apply(np.prod)
+
+        return returns_comp

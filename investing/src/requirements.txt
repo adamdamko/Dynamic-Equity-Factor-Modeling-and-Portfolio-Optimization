@@ -74,6 +74,8 @@ cookiecutter==1.7.3
     # via kedro
 coverage==5.5
     # via pytest-cov
+cramjam==2.4.0
+    # via fastparquet
 cycler==0.10.0
     # via
     #   -r C:\Users\damko\PycharmProjects\Equity_Investing\investing\src\requirements.in
@@ -96,6 +98,8 @@ exchange-calendars==3.3
     # via
     #   -r C:\Users\damko\PycharmProjects\Equity_Investing\investing\src\requirements.in
     #   pandas-market-calendars
+fastparquet==0.7.1
+    # via -r C:\Users\damko\PycharmProjects\Equity_Investing\investing\src\requirements.in
 filelock==3.0.12
     # via
     #   -r C:\Users\damko\PycharmProjects\Equity_Investing\investing\src\requirements.in
@@ -103,7 +107,9 @@ filelock==3.0.12
 flake8==3.9.2
     # via -r C:\Users\damko\PycharmProjects\Equity_Investing\investing\src\requirements.in
 fsspec==2021.9.0
-    # via kedro
+    # via
+    #   fastparquet
+    #   kedro
 future==0.18.2
     # via
     #   -r C:\Users\damko\PycharmProjects\Equity_Investing\investing\src\requirements.in
@@ -319,6 +325,7 @@ numpy==1.20.3
     # via
     #   -r C:\Users\damko\PycharmProjects\Equity_Investing\investing\src\requirements.in
     #   exchange-calendars
+    #   fastparquet
     #   hpsklearn
     #   hyperopt
     #   imagehash
@@ -329,6 +336,7 @@ numpy==1.20.3
     #   pandas
     #   pandas-profiling
     #   phik
+    #   pyarrow
     #   pywavelets
     #   ray
     #   scikit-learn
@@ -356,6 +364,7 @@ pandas==1.3.3
     # via
     #   -r C:\Users\damko\PycharmProjects\Equity_Investing\investing\src\requirements.in
     #   exchange-calendars
+    #   fastparquet
     #   pandas-market-calendars
     #   pandas-profiling
     #   phik
@@ -408,6 +417,8 @@ py==1.10.0
     # via
     #   -r C:\Users\damko\PycharmProjects\Equity_Investing\investing\src\requirements.in
     #   pytest
+pyarrow==6.0.0
+    # via -r C:\Users\damko\PycharmProjects\Equity_Investing\investing\src\requirements.in
 pycodestyle==2.7.0
     # via flake8
 pycparser==2.20
@@ -556,6 +567,7 @@ six==1.16.0
     #   imagehash
     #   jsonschema
     #   python-dateutil
+    #   thrift
 sklearn-pandas==2.2.0
     # via -r C:\Users\damko\PycharmProjects\Equity_Investing\investing\src\requirements.in
 slicer==0.0.7
@@ -590,6 +602,8 @@ threadpoolctl==2.2.0
     # via
     #   -r C:\Users\damko\PycharmProjects\Equity_Investing\investing\src\requirements.in
     #   scikit-learn
+thrift==0.15.0
+    # via fastparquet
 toml==0.10.2
     # via
     #   -r C:\Users\damko\PycharmProjects\Equity_Investing\investing\src\requirements.in

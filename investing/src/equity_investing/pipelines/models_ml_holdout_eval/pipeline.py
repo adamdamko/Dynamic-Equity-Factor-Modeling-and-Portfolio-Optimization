@@ -14,5 +14,17 @@ def create_holdout_validation_pipeline(**kwargs):
                 outputs='holdout_results_data',
                 name='holdout_results_data_node',
             ),
+            node(
+                func=HoldoutValidation.top_predictions_view,
+                inputs=['holdout_results_data'],
+                outputs='top_predictions_view_data',
+                name='top_predictions_view_data_node',
+            ),
+            node(
+                func=HoldoutValidation.performance_summary,
+                inputs=['holdout_results_data'],
+                outputs='performance_summary_data',
+                name='performance_summary_data_node',
+            ),
         ]
     )

@@ -231,7 +231,7 @@ model_features:
 ## LightGBM: static parameters
 lgbm_static_params:
     boosting_type: 'dart'
-    extra_trees: True
+    extra_trees: False
     n_jobs: 23
     n_iter: 400
     scoring: 'neg_root_mean_squared_error'
@@ -240,61 +240,42 @@ lgbm_static_params:
 ## LIGHTGBM COARSE TUNING
 # LightGBM: coarse tuning parameters
 lgbm_coarse_tune_params:
-    lgbm_model__n_estimators: [ 50, 100, 150, 200, 250, 300, 350, 400, 425, 475, 545, 616, 687, 758, 829,
-                                900, 970, 1041, 1112, 1183, 1254, 1325, 1395, 1466, 1537, 1608, 1679, 1750 ]
-    lgbm_model__learning_rate: [ 0.01 , 0.012, 0.013, 0.015, 0.017, 0.018, 0.02 , 0.022, 0.023,
-                                 0.025, 0.027, 0.028, 0.03 , 0.032, 0.033, 0.035, 0.037, 0.038,
-                                 0.04 , 0.042, 0.043, 0.045, 0.047, 0.048, 0.05 ]
-    lgbm_model__num_leaves: [ 35,  43,  51,  59,  68,  76,  84,  92, 101,
-                              109, 117, 125, 134, 142, 150, 158, 167, 175, 183, 191, 200 ]
-    lgbm_model__min_data_in_leaf: [ 20, 40, 60, 80, 100, 125, 150, 175, 200, 222, 245, 268, 291, 314, 337, 360 ]
-    lgbm_model__reg_lambda: [ 2.0, 2.25, 2.5, 3.75, 3.0, 3.25, 3.5, 3.75, 4.0, 4.25, 4.5, 4.75,
-                              5.0, 5.625, 6.25, 6.875, 7.5, 8.125, 8.75, 9.375,
-                              10.0, 10.625, 11.25, 11.875, 12.5, 13.125, 13.75, 14.375,
-                              15.0, 15.625, 16.25, 16.875, 17.5, 18.125, 18.75 , 19.375,
-                              20.0 ]
-
-
-# LightGBM best coarse tuning parameters (not used in any pipeline)
-lgbm_coarse_best_params:
-    n_estimators: 262
-    learning_rate: 0.012
-    max_depth: 222
-    reg_lambda: 6.25
-    num_leaves: 2
-    max_bin: 296
-
+    lgbm_model__n_estimators: [ 40, 60, 80, 100, 120, 140, 160, 180, 200, 220, 240, 260, 280, 300, 320, 340, 360,
+                                380, 400, 420, 440, 460, 480, 500]
+    lgbm_model__learning_rate: [ 0.0005, 0.0006, 0.0007, 0.0008, 0.0009, 0.001, 0.002, 0.005, 0.01,
+                                 0.012, 0.013, 0.015, 0.017, 0.018, 0.02 ]
+    lgbm_model__max_depth: [ 2, 3, 4, 5, 6, 7, 8, 9, 10 ]
+    lgbm_model__num_leaves: [ 4, 8, 16, 32, 64, 128, 256, 512, 1024 ]
+    lgbm_model__min_data_in_leaf: [ 20, 40, 60, 80, 100, 125, 150, 175, 200, 222, 245, 268, 291, 314, 337, 360,
+                                    383, 406, 429, 452, 475, 500, 750, 1000, 1500, 2000, 2500, 3000, 3500, 4000,
+                                    4500, 5000 ]
 
 
 ## LIGHTGBM FINE-TUNING
 # LightGBM: fine-tuning parameters
 lgbm_fine_tune_params:
-    lgbm_model__n_estimators: [ 50,  60,  70,  80,  90, 100, 110, 120, 130, 140, 150, 160, 170,
-                               180, 190, 200, 210, 220, 230, 240, 250, 260, 270, 280, 290, 300,
-                               310, 320, 330, 340, 350, 360, 370, 380, 390, 400, 410, 420, 430, 440, 450 ]
-    lgbm_model__learning_rate: [ 0.01, 0.012, 0.013, 0.014, 0.015, 0.016, 0.017, 0.018, 0.019, 0.02 ]
-    lgbm_model__num_leaves: [ 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34,
-                              36, 38, 40, 42, 44, 46, 48, 50 ]
-    lgbm_model__min_data_in_leaf: [ 200, 222, 245, 268, 291, 314, 337, 360, 383, 406, 429, 452, 475,
-                                    497, 520, 543, 566, 589, 612, 635, 658, 681, 704, 727, 750 ]
-    lgbm_model__reg_lambda: [ 5.0, 5.625, 6.25, 6.875, 7.5, 8.125, 8.75, 9.375,
-                             10.0, 10.625, 11.25, 11.875, 12.5, 13.125, 13.75, 14.375,
-                             15.0, 15.625, 16.25, 16.875, 17.5, 18.125, 18.75 , 19.375, 20.0 ]
-
+    lgbm_model__n_estimators: [ 50,  56,  63,  70,  77,  84,  91,  98, 105, 112, 118, 125, 132,
+                                139, 146, 153, 160, 167, 174, 181, 187, 194, 201, 208, 215, 222,
+                                229, 236, 243, 250 ]
+    lgbm_model__learning_rate: [ 0.0006, 0.0007, 0.0008, 0.0009, 0.001, 0.002 ]
+    lgbm_model__max_depth: [ 2, 3, 4, 5, 6, 7, 8, 9, 10 ]
+    lgbm_model__num_leaves: [ 4, 8, 16, 32, 64, 128, 256, 512, 1024 ]
+    lgbm_model__min_data_in_leaf: [ 2000, 2103, 2206, 2310, 2413, 2517, 2620, 2724, 2827, 2931, 3034,
+                                    3137, 3241, 3344, 3448, 3551, 3655, 3758, 3862, 3965, 4068, 4172,
+                                    4275, 4379, 4482, 4586, 4689, 4793, 4896, 5000 ]
 
 
 ### Model Best Hyperparameters ###
-## LightGBM best fine-tuning parameters ##
+## LightGBM best fine-tuning parameters (modified slightly from tuning) ##
 lgbm_fine_best_params:
-    n_estimators: 782
-    learning_rate: 0.074
-    num_leaves: 12
-    min_data_in_leaf: 22
-    reg_lambda: 16.667
-    random_state: 638552
+    n_estimators: 250
+    learning_rate: 0.0006
+    max_depth: 7
+    num_leaves: 80
+    min_data_in_leaf: 5000
     boosting_type: 'dart'
-    extra_trees: True
     n_jobs: 23
+    random_state: 638552
 
 ###  End Model hyperparameters ###
 

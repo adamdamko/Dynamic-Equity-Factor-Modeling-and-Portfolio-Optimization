@@ -37,8 +37,8 @@ cleaned_data_eda:
 #################################################### FEATURE DATA ######################################################
 # Modeling data
 modeling_data:
-  type: pandas.CSVDataSet
-  filepath: data/04_feature/modeling_data.csv
+  type: pandas.ParquetDataSet
+  filepath: data/04_feature/modeling_data.parquet
 
 # Cleaned data from raw_joined_data
 eda_modeling_data:
@@ -49,24 +49,18 @@ eda_modeling_data:
 ################################################ MODEL INPUT DATA ######################################################
 # Holdout data
 holdout_data:
-  type: pandas.CSVDataSet
-  filepath: data/05_model_input/holdout_data.csv
-  load_args:
-    dtype: { 'sector': category,
-             'market_cap_cat': category }
+  type: pandas.ParquetDataSet
+  filepath: data/05_model_input/holdout_data.parquet
 
 # Train X data
 train_x_data:
-  type: pandas.CSVDataSet
-  filepath: data/05_model_input/train_x_data.csv
-  load_args:
-    dtype: {'sector': category,
-            'market_cap_cat': category}
+  type: pandas.ParquetDataSet
+  filepath: data/05_model_input/train_x_data.parquet
 
 # Train y data
 train_y_data:
-  type: pandas.CSVDataSet
-  filepath: data/05_model_input/train_y_data.csv
+  type: pandas.ParquetDataSet
+  filepath: data/05_model_input/train_y_data.parquet
 
 # Time-series split list
 time_series_split_list:
@@ -109,9 +103,18 @@ lgbm_fine_cv_model_hyperparameters:
 
 # Model Holdout results
 holdout_results_data:
-  type: pandas.CSVDataSet
-  filepath: data/07_model_output/holdout_results_data.csv
+  type: pandas.ParquetDataSet
+  filepath: data/07_model_output/holdout_results_data.parquet
 
+# Top predictions view
+top_predictions_view_data:
+  type: pandas.ParquetDataSet
+  filepath: data/07_model_output/top_predictions_view_data.parquet
+
+# Performance summary results
+performance_summary_data:
+  type: pandas.ParquetDataSet
+  filepath: data/07_model_output/performance_summary_data.parquet
 
 
 ########################################################################################################################
