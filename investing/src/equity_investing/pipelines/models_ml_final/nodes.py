@@ -3,25 +3,17 @@
 # This is the chosen modeling method (Lightgbm) file.
 # Comments on hyperparameters from initial 'coarse' tuning:
 #   n_estimators (num_iterations) : best performance n_estimators < 300
-#   learning_rate: best performance at 0.01 < learning_rate < 0.02
-#             - **Tradeoff between learning rate and n_estimators. Smaller learning_rate
-#               seems to improve performance (<0.01) but requires more n_estimators to
-#               to reach convergence. But performance improves greatly with fewer
-#               n_estimators (150 < n_estimators < 300). Convergence issues at learning_rate
-#               (<0.01). So learning_rate at 0.01 was minimum used.**
-#   max_depth: performance does not vary much from lower to higher levels
-#             - keep this value lower to reduce over-fitting
-#   reg_lambda (lambda_l2): performance does not vary much between values
-#             - use higher value to reduce over-fitting
-#   num_leaves: performance decreases as num_leaves gets larger
-#             - num_leaves <= 10 seems best
+#   learning_rate: best performance at < 0.001
+#             - ** Convergence issues at learning_rate (<0.01) may be a problem, but do
+#               not seem to be currently. This may be something to look into down the road.**
+#   max_depth: keep this value lower to reduce over-fitting (5-10)
+#   num_leaves: Theoretically, we can set num_leaves = 2^(max_depth) to obtain the same number
+#               of leaves as depth-wise tree. Unconstrained depth can induce over-fitting.
 #             - small number of leaves also reduces over-fitting
-#   max_bin: performance does not vary much between values
-#             - keep low to reduce over-fitting
-#   extra_trees: used to reduce over-fitting
+#             - keep num_leaves < 2^(max_depth
+#   min_data_in_leaf: performance seems to be less volatile at levels > 2000 and <= 5000
 #   dart: seems to improve performance
 #   random_state: after testing, random_state is relatively stable
-#             - choose random_state 126502 for final model (lowest std in testing)
 
 # Import libraries
 import pandas as pd
