@@ -36,19 +36,21 @@ class DataFiltering:
         return data_2
 
     @staticmethod
-    def filter_dates(filtered_data: pd.DataFrame) -> pd.DataFrame:
+    def filter_dates(filtered_data: pd.DataFrame, current_date: Dict) -> pd.DataFrame:
         """
         This function removes missing data from January 2007 and February 2020 as these
         are not full months and full months are needed for this analysis.
 
         Args:
             filtered_data:
+            current_date: Last end-of-month date available in data set
+             (e.g. if it is 11/1/21 then current_date is 10/29/21).
 
         Returns:
             Pandas dataframe of data  '2007-02-01' <= data <= '2021-08-31'
         """
         data = filtered_data
-        data_2 = data[(data['date'] >= '2007-02-01') & (data['date'] <= '2021-09-30')]
+        data_2 = data[(data['date'] >= '2007-02-01') & (data['date'] <= current_date)]
 
         return data_2
 
@@ -152,13 +154,14 @@ class FeatureEngineering:
         return data_2
 
     @staticmethod
-    def market_schedule() -> pd.DataFrame:
+    def market_schedule(current_date: Dict) -> pd.DataFrame:
         """
         This function creates a NYSE market schedule that will be
         used for joining.
 
         Args:
-            -
+            current_date: Last end-of-month date available in data set
+             (e.g. if it is 11/1/21 then current_date is 10/29/21).
 
         Returns:
             Pandas dataframe with a the NYSE trading day schedule from
@@ -168,7 +171,7 @@ class FeatureEngineering:
         # Get NYSE calendar
         nyse = mcal.get_calendar('NYSE')
         # Get date schedule
-        schedule = nyse.schedule(start_date='2007-02-01', end_date='2021-09-30')
+        schedule = nyse.schedule(start_date='2007-02-01', end_date=current_date)
         # Get month end
         schedule['year'] = schedule['market_close'].dt.year
         schedule['month'] = schedule['market_close'].dt.month

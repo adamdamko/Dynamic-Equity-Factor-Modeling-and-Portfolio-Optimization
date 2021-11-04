@@ -126,6 +126,11 @@ modeling_data_drop_list:
 
 ################################## THIS HOLDS ALL MODELS_ML_FINAL HYPERPARAMETERS ######################################
 
+# Current Date
+# Last end-of-month date available in data set (e.g. if it is 11/1/21 then current_date is 10/29/21)
+# This date must be a valid trading date for the NYSE
+current_date: '2021-10-29'
+
 # Date to split train/validation sets from the final holdout set.
 # The date given is the date that starts the holdout set (i.e., the train/validation sets will be all dates less than
 # the date given).
@@ -289,14 +294,13 @@ lgbm_fine_best_params:
 validation_train_dates_list: [ '2020-02-01', '2020-03-01', '2020-04-01', '2020-05-01', '2020-06-01', '2020-07-01',
                                '2020-08-01', '2020-09-01', '2020-10-01', '2020-11-01', '2020-12-01', '2021-01-01',
                                '2021-02-01', '2021-03-01', '2021-04-01', '2021-05-01', '2021-06-01', '2021-07-01',
-                               '2021-08-01' ]
+                               '2021-08-01', '2021-09-01' ]
 
 # Test dates
 validation_test_dates_list: [ '2020-03-01', '2020-04-01', '2020-05-01', '2020-06-01', '2020-07-01', '2020-08-01',
                               '2020-09-01', '2020-10-01', '2020-11-01', '2020-12-01', '2021-01-01', '2021-02-01',
                               '2021-03-01', '2021-04-01', '2021-05-01', '2021-06-01', '2021-07-01', '2021-08-01',
-                              '2021-09-01' ]
-
+                              '2021-09-01', '2021-10-01' ]
 
 
 

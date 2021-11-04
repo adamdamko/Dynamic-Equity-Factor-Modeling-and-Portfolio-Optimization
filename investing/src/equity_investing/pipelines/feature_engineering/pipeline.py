@@ -22,7 +22,7 @@ def create_pipeline(**kwargs):
             ),
             node(
                 func=DataFiltering.filter_dates,
-                inputs=['filtered_data'],
+                inputs=['filtered_data', 'params:current_date'],
                 outputs='filtered_dates_data',
                 name='filtered_dates_data_node',
             ),
@@ -40,7 +40,7 @@ def create_pipeline(**kwargs):
             ),
             node(
                 func=FeatureEngineering.market_schedule,
-                inputs=[],
+                inputs=['params:current_date'],
                 outputs='market_schedule_data',
                 name='market_schedule_node',
             ),

@@ -139,6 +139,7 @@ class HoldoutValidation:
         # Get top 100 predictions per month only view
         top_preds_returns = final_results2.sort_values(['date', 'predictions'], ascending=False)
         top_preds = top_preds_returns.groupby('date')['predictions'].nlargest(100).reset_index().set_index('level_1')
+        # Join to have dates and tickers included in output
         top_preds_returns = pd.merge(top_preds, top_preds_returns, how='left', left_index=True, right_index=True)
         top_preds_returns = top_preds_returns.drop(columns=['date_x', 'predictions_x']). \
             rename(columns={'date_y': 'date', 'predictions_y': 'predictions'})
@@ -162,19 +163,22 @@ class HoldoutValidation:
         # Get top 100 predictions per month only view
         top_preds_returns = final_results.sort_values(['date', 'predictions'], ascending=False)
         top_preds = top_preds_returns.groupby('date')['predictions'].nlargest(100).reset_index().set_index('level_1')
+        # Join to have dates and tickers included in output
         top_preds_returns = pd.merge(top_preds, top_preds_returns, how='left', left_index=True, right_index=True)
         top_preds_returns = top_preds_returns.drop(columns=['date_x', 'predictions_x']). \
             rename(columns={'date_y': 'date', 'predictions_y': 'predictions'})
-        # Join returns
+
+        # Get equally-weighted returns of top 100 predicted tickers
         top_preds_returns2 = top_preds_returns.groupby('date').agg({'target_1m_mom_lead': 'mean'}). \
             rename(columns={'target_1m_mom_lead': 'top_preds_returns'})
+        # Get equally-weighted returns of entire market (~1300 securities)
         total_market_returns = final_results.groupby('date').agg({'target_1m_mom_lead': 'mean'})
+        # Merge top prediction returns with entire market returns
         returns_comp = pd.merge(total_market_returns, top_preds_returns2, how='left', left_index=True, right_index=True)
-        returns_comp.loc[:, 'market_rolling_return'] = returns_comp['target_1m_mom_lead'].rolling(window=19,
-                                                                                                  min_periods=1). \
-            apply(np.prod)
-        returns_comp.loc[:, 'top_preds_rolling_return'] = returns_comp['top_preds_returns'].rolling(window=19,
-                                                                                                    min_periods=1). \
-            apply(np.prod)
+        # Create cumulative rolling returns view
+        returns_comp.loc[:, 'market_rolling_return'] = \
+            returns_comp['target_1m_mom_lead'].rolling(window=len(returns_comp), min_periods=1).apply(np.prod)
+        returns_comp.loc[:, 'top_preds_rolling_return'] = \
+            returns_comp['top_preds_returns'].rolling(window=len(returns_comp), min_periods=1).apply(np.prod)
 
         return returns_comp
