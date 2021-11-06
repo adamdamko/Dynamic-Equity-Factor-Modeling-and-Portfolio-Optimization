@@ -46,7 +46,7 @@ def intro_clean_data(raw_joined_data: pd.DataFrame) -> pd.DataFrame:
     """
     # Select columns
     raw_data_2 = raw_joined_data[['Ticker', 'SimFinId', 'Company Name', 'Sector', 'Industry',
-                                  'Date', 'Adj. Close', 'Volume', 'Market-Cap', 'Price to Book Value',
+                                  'Date', 'Open', 'Adj. Close', 'Volume', 'Market-Cap', 'Price to Book Value',
                                   'Price to Free Cash Flow (quarterly)', 'Price to Free Cash Flow (ttm)']]
     # Rename columns
     raw_data_2 = raw_data_2.rename(columns={'Ticker': 'ticker',
@@ -55,6 +55,7 @@ def intro_clean_data(raw_joined_data: pd.DataFrame) -> pd.DataFrame:
                                             'Sector': 'sector',
                                             'Industry': 'industry',
                                             'Date': 'date',
+                                            'Open': 'open',
                                             'Adj. Close': 'adj_close',
                                             'Volume': 'volume',
                                             'Market-Cap': 'market_cap',

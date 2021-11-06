@@ -67,7 +67,8 @@ def create_pipeline(**kwargs):
             ),
             node(
                 func=FeatureEngineering.create_modeling_data,
-                inputs=['momentum_data', 'params:modeling_data_drop_list', 'params:model_target'],
+                inputs=['momentum_data', 'params:modeling_data_drop_list',
+                        'params:model_target', 'params:current_date'],
                 outputs='modeling_data',
                 name='create_modeling_data_node',
             ),

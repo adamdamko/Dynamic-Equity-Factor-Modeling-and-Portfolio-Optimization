@@ -32,7 +32,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.compose import TransformedTargetRegressor
 from pypfopt import black_litterman, risk_models
 from pypfopt import BlackLittermanModel, plotting
-
+from pypfopt import EfficientFrontier, objective_functions
 
 #%% Get train data and splits
 X_train = pd.read_parquet(
@@ -149,26 +149,42 @@ price_data = pd.read_parquet(
     'C:/Users/damko/PycharmProjects/Equity_Investing/investing/data/02_intermediate/intro_cleaned_data.parquet'
 )
 
-#%% Get pricing data for necessary tickers
-prices = price_data[price_data['ticker'].isin(list(top_predictions_data['ticker']))]
-prices = prices[['date', 'ticker', 'market_cap', 'adj_close']]
+#%% Train and test dates
+# Train dates
+validation_train_dates_list = ['2020-02-01', '2020-03-01', '2020-04-01', '2020-05-01', '2020-06-01', '2020-07-01',
+                               '2020-08-01', '2020-09-01', '2020-10-01', '2020-11-01', '2020-12-01', '2021-01-01',
+                               '2021-02-01', '2021-03-01', '2021-04-01', '2021-05-01', '2021-06-01', '2021-07-01',
+                               '2021-08-01', '2021-09-01']
 
-# Make time series
-prices_2 = prices.pivot(index='date', columns='ticker', values='adj_close')
+# Test dates
+validation_test_dates_list = ['2020-03-01', '2020-04-01', '2020-05-01', '2020-06-01', '2020-07-01', '2020-08-01',
+                              '2020-09-01', '2020-10-01', '2020-11-01', '2020-12-01', '2021-01-01', '2021-02-01',
+                              '2021-03-01', '2021-04-01', '2021-05-01', '2021-06-01', '2021-07-01', '2021-08-01',
+                              '2021-09-01', '2021-10-01']
+
+#%% Get pricing data for necessary tickers
+# Get predictions by month
+preds_data = top_predictions_data[(top_predictions_data['date'] > '2020-02-01') &
+                                  (top_predictions_data['date'] < '2020-03-01')]
+# Get price data used for risk model
+prices = price_data[(price_data['date'] < '2020-03-01') & (price_data['ticker'].isin(list(preds_data['ticker'])))]
+prices = prices[['date', 'ticker', 'market_cap', 'open', 'adj_close']]
+# Make time series of predictions
+prices_2 = prices.pivot(index='date', columns='ticker', values='adj_close').dropna()
 # Make risk model
 S = risk_models.CovarianceShrinkage(prices_2).ledoit_wolf()
 
 #%% Get views and confidences
-predictions = top_predictions_data.copy()
-predictions = predictions.set_index('date')
-predictions.loc[:, 'views'] = predictions['predictions'] - 1
+predictions = preds_data.set_index('date')
+# Annualized returns for allocation
+predictions.loc[:, 'views'] = (predictions['predictions'])**12 - 1
+# Set confidence level
 predictions.loc[:, 'confidences'] = 0.9
-predictions = predictions[predictions.index.isin(['2020-02-28'])]
 # Make dict for views
 viewdict = predictions[['ticker', 'views']].reset_index(drop=True).set_index('ticker').to_dict()
 
-#%% Black-litterman
-bl = BlackLittermanModel(S,
+#%% Make Black-Litterman
+bl = BlackLittermanModel(cov_matrix=S,
                          absolute_views=viewdict['views'],
                          omega="idzorek",
                          view_confidences=predictions['confidences']
@@ -176,4 +192,36 @@ bl = BlackLittermanModel(S,
 
 #%% Posterior estimate of returns
 ret_bl = bl.bl_returns()
-print(ret_bl)
+S_bl = bl.bl_cov()
+
+#%% Portfolio allocation
+ef = EfficientFrontier(ret_bl, S_bl)
+ef.add_objective(objective_functions.L2_reg)
+ef.max_sharpe()
+weights = ef.clean_weights()
+# Make weights as dataframe
+weights = pd.merge(pd.DataFrame(weights.keys()), pd.DataFrame(weights.values()),
+                   how='left',
+                   left_index=True,
+                   right_index=True).rename(columns={'0_x': 'tickers', '0_y': 'weights'})
+
+
+#%% PLOTTING
+# Plot Efficient Frontier
+fig, ax = plt.subplots()
+plotting.plot_efficient_frontier(ef, ax=ax, show_assets=True)
+plt.show()
+
+#%% Get portfolio weights
+ef = EfficientFrontier(ret_bl, S_bl)
+ef.add_objective(objective_functions.L2_reg)
+ef.max_sharpe()
+weights = ef.clean_weights()
+
+#%% Plot allocation
+pd.Series(weights).plot.pie(figsize=(10, 10))
+plt.show()
+
+#%% Plot weights
+plotting.plot_weights(weights=weights)
+plt.show()

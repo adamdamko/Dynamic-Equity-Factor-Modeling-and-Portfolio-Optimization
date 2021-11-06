@@ -47,7 +47,7 @@ class DataFiltering:
              (e.g. if it is 11/1/21 then current_date is 10/29/21).
 
         Returns:
-            Pandas dataframe of data  '2007-02-01' <= data <= '2021-08-31'
+            Pandas dataframe of data  '2007-02-01' <= data <= current_date
         """
         data = filtered_data
         data_2 = data[(data['date'] >= '2007-02-01') & (data['date'] <= current_date)]
@@ -468,7 +468,7 @@ class FeatureEngineering:
 
     @staticmethod
     def create_modeling_data(momentum_data: pd.DataFrame, modeling_data_drop_list: Dict,
-                             model_target: Dict) -> pd.DataFrame:
+                             model_target: Dict, current_date: Dict) -> pd.DataFrame:
         """
         This function creates a modeling data set with a categorical
         market cap variable. It creates the target variable as the
@@ -481,6 +481,8 @@ class FeatureEngineering:
             momentum_data: Output of 'create_momentum_factors' method
             modeling_data_drop_list: List of variables to drop from final data set.
             model_target: Model target variable.
+            current_date: Last end-of-month date available in data set
+             (e.g. if it is 11/1/21 then current_date is 10/29/21).
 
         Returns:
             Pandas dataframe with target variable ready for modeling.
@@ -493,14 +495,14 @@ class FeatureEngineering:
         # Create target, move back one-month momentum (which is one-month return)
         data_2.loc[:, model_target] = data_2.groupby('ticker')['return_mom_1_0'].shift(-1)
 
-        # Drop first row as it contains no lagged values
-        data_3 = data_2.groupby('ticker').apply(lambda group: group.iloc[1:]).reset_index(drop=True)
-        # Drop last 3 rows as they have no target
-        data_4 = data_3.groupby('ticker').apply(lambda group: group.iloc[:-1]).reset_index(drop=True)
-        # Drop missing values
-        data_5 = data_4.dropna()
+        # Get list of column names
+        col_list = data_2.columns.drop('target_1m_mom_lead')
+        # Drop na values
+        data_2.dropna(subset=col_list, inplace=True)
+        # Drop rows where the last value for a ticker is not the latest current date
+        modeling_data = data_2.loc[~((data_2['target_1m_mom_lead'].isnull()) & (data_2['date'] != current_date)), :]
 
-        return data_5
+        return modeling_data
 
     @staticmethod
     def create_final_eda_data(modeling_data: pd.DataFrame):
