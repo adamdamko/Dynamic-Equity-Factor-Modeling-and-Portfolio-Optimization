@@ -76,6 +76,8 @@ coverage==5.5
     # via pytest-cov
 cramjam==2.4.0
     # via fastparquet
+cvxpy==1.1.17
+    # via pyportfolioopt
 cycler==0.10.0
     # via
     #   -r C:\Users\damko\PycharmProjects\Equity_Investing\investing\src\requirements.in
@@ -90,6 +92,8 @@ defusedxml==0.7.1
     # via nbconvert
 dynaconf==3.1.5
     # via kedro
+ecos==2.0.7.post1
+    # via cvxpy
 entrypoints==0.3
     # via
     #   jupyterlab-server
@@ -324,6 +328,8 @@ numba==0.54.0
 numpy==1.20.3
     # via
     #   -r C:\Users\damko\PycharmProjects\Equity_Investing\investing\src\requirements.in
+    #   cvxpy
+    #   ecos
     #   exchange-calendars
     #   fastparquet
     #   hpsklearn
@@ -333,14 +339,18 @@ numpy==1.20.3
     #   matplotlib
     #   missingno
     #   numba
+    #   osqp
     #   pandas
     #   pandas-profiling
     #   phik
     #   pyarrow
+    #   pyportfolioopt
     #   pywavelets
+    #   qdldl
     #   ray
     #   scikit-learn
     #   scipy
+    #   scs
     #   seaborn
     #   shap
     #   simfin
@@ -349,6 +359,8 @@ numpy==1.20.3
     #   tune-sklearn
     #   visions
     #   xgboost
+osqp==0.6.2.post0
+    # via cvxpy
 packaging==21.0
     # via
     #   -r C:\Users\damko\PycharmProjects\Equity_Investing\investing\src\requirements.in
@@ -368,6 +380,7 @@ pandas==1.3.3
     #   pandas-market-calendars
     #   pandas-profiling
     #   phik
+    #   pyportfolioopt
     #   ray
     #   seaborn
     #   shap
@@ -443,6 +456,8 @@ pyparsing==2.4.7
     #   -r C:\Users\damko\PycharmProjects\Equity_Investing\investing\src\requirements.in
     #   matplotlib
     #   packaging
+pyportfolioopt==1.5.1
+    # via -r C:\Users\damko\PycharmProjects\Equity_Investing\investing\src\requirements.in
 pyrsistent==0.18.0
     # via jsonschema
 pytest-cov==2.12.1
@@ -493,6 +508,8 @@ pyzmq==22.3.0
     #   jupyter-server
     #   notebook
     #   qtconsole
+qdldl==0.1.5.post0
+    # via osqp
 qtconsole==5.1.1
     # via jupyter
 qtpy==1.11.2
@@ -531,19 +548,27 @@ scikit-learn==0.24.2
 scipy==1.7.1
     # via
     #   -r C:\Users\damko\PycharmProjects\Equity_Investing\investing\src\requirements.in
+    #   cvxpy
+    #   ecos
     #   hpsklearn
     #   hyperopt
     #   imagehash
     #   lightgbm
     #   missingno
+    #   osqp
     #   pandas-profiling
     #   phik
+    #   pyportfolioopt
+    #   qdldl
     #   scikit-learn
+    #   scs
     #   seaborn
     #   shap
     #   sklearn-pandas
     #   tune-sklearn
     #   xgboost
+scs==2.1.4
+    # via cvxpy
 seaborn==0.11.2
     # via
     #   missingno
