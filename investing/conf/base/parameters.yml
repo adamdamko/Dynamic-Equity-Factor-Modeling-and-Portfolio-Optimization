@@ -304,6 +304,23 @@ validation_test_dates_list: [ '2020-03-01', '2020-04-01', '2020-05-01', '2020-06
 
 
 
+####################################### PORTFOLIO_BACKTESTING PARAMETERS ###############################################
+# The last date of the market schedule. This date should be three months beyond the last prediction date.
+# It should be an end-of-calendar-month value. (E.g., if the last prediction date is 2021-09-30 then the
+# schedule_end_date would be 2021-12-31).
+schedule_end_date: '2021-12-31'
+
+# Date of last prediction. (E.g., if you are predicting for the month of 2021-10 ending 2021-10-29,
+# the last_prediction_date would be the last trading day of the prior month, 2021-09-30 in this case).
+last_prediction_date: '2021-09-30'
+
+# Initial amount in portfolio for backtesting
+initial_portfolio_value: 100000
+
+# Confidence level in Black-Litterman optimization (note: this could be different for all stock predictions, but
+# as this is algorithmic, I do not have any reason to have more/less confidence in any given prediction).
+confidence_level: 0.9
+
 
 
 
