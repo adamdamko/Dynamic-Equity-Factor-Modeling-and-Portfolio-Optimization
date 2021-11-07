@@ -26,6 +26,7 @@ import lightgbm as lgb
 import matplotlib.pyplot as plt
 import shap
 import pypfopt
+import pandas_market_calendars as mcal
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
@@ -149,61 +150,129 @@ price_data = pd.read_parquet(
     'C:/Users/damko/PycharmProjects/Equity_Investing/investing/data/02_intermediate/intro_cleaned_data.parquet'
 )
 
-#%% Train and test dates
-# Train dates
-validation_train_dates_list = ['2020-02-01', '2020-03-01', '2020-04-01', '2020-05-01', '2020-06-01', '2020-07-01',
-                               '2020-08-01', '2020-09-01', '2020-10-01', '2020-11-01', '2020-12-01', '2021-01-01',
-                               '2021-02-01', '2021-03-01', '2021-04-01', '2021-05-01', '2021-06-01', '2021-07-01',
-                               '2021-08-01', '2021-09-01']
 
-# Test dates
-validation_test_dates_list = ['2020-03-01', '2020-04-01', '2020-05-01', '2020-06-01', '2020-07-01', '2020-08-01',
-                              '2020-09-01', '2020-10-01', '2020-11-01', '2020-12-01', '2021-01-01', '2021-02-01',
-                              '2021-03-01', '2021-04-01', '2021-05-01', '2021-06-01', '2021-07-01', '2021-08-01',
-                              '2021-09-01', '2021-10-01']
+#%% Get market dates
+# Get market calendar dates
+# Get NYSE calendar
+nyse = mcal.get_calendar('NYSE')
+# Get date schedule
+schedule = nyse.schedule(start_date='2020-02-28', end_date='2021-12-31')
+# Get month end
+schedule['year'] = schedule['market_close'].dt.year
+schedule['month'] = schedule['market_close'].dt.month
+schedule['day'] = schedule['market_close'].dt.day
+# Get number of days in group
+schedule['cal_days_in_month'] = schedule.groupby(['year', 'month'])['day'].transform('count')
+# Grab month end dates
+schedule_end = schedule.groupby(['year', 'month'])['day'].max().reset_index()
+schedule_end.loc[:, 'month_end_date'] = pd.to_datetime(schedule_end[['year', 'month', 'day']])
+# Grab month start dates
+schedule_start = schedule.groupby(['year', 'month'])['day'].min().reset_index()
+schedule_start.loc[:, 'month_start_date'] = pd.to_datetime(schedule_start[['year', 'month', 'day']])
+# Make schedule to join
+schedule_join = pd.merge(schedule_start, schedule_end, how='left', on=['year', 'month'], validate='1:1')
+schedule_join = schedule_join[['month_start_date', 'month_end_date']]
+# Create month ahead dates
+schedule_join.loc[:, 'period_start_date'] = schedule_join['month_start_date'].shift(-1)
+schedule_join.loc[:, 'period_end_date'] = schedule_join['month_start_date'].shift(-2)
+# Filter month_end_date to last prediction date
+schedule_join = schedule_join[schedule_join['month_end_date'] <= '2021-09-30']
 
 #%% Get pricing data for necessary tickers
-# Get predictions by month
-preds_data = top_predictions_data[(top_predictions_data['date'] > '2020-02-01') &
-                                  (top_predictions_data['date'] < '2020-03-01')]
-# Get price data used for risk model
-prices = price_data[(price_data['date'] < '2020-03-01') & (price_data['ticker'].isin(list(preds_data['ticker'])))]
-prices = prices[['date', 'ticker', 'market_cap', 'open', 'adj_close']]
-# Make time series of predictions
-prices_2 = prices.pivot(index='date', columns='ticker', values='adj_close').dropna()
-# Make risk model
-S = risk_models.CovarianceShrinkage(prices_2).ledoit_wolf()
+results = pd.DataFrame()
+initial_amount = 10**5
+confidence = 0.9
 
-#%% Get views and confidences
-predictions = preds_data.set_index('date')
-# Annualized returns for allocation
-predictions.loc[:, 'views'] = (predictions['predictions'])**12 - 1
-# Set confidence level
-predictions.loc[:, 'confidences'] = 0.9
-# Make dict for views
-viewdict = predictions[['ticker', 'views']].reset_index(drop=True).set_index('ticker').to_dict()
+for date in list(schedule_join['month_end_date']):
+    # Get predictions by month
+    preds_data = top_predictions_data[(top_predictions_data['date'] == date)]
+    # Get price data used for risk model
+    prices = price_data[(price_data['date'] <= date) & (price_data['ticker'].isin(list(preds_data['ticker'])))]
+    prices = prices[['date', 'ticker', 'market_cap', 'open', 'adj_close']]
+    # Make time series of predictions
+    prices_2 = prices.pivot(index='date', columns='ticker', values='adj_close').dropna()
+    # Make risk model
+    S = risk_models.CovarianceShrinkage(prices_2).ledoit_wolf()
 
-#%% Make Black-Litterman
-bl = BlackLittermanModel(cov_matrix=S,
-                         absolute_views=viewdict['views'],
-                         omega="idzorek",
-                         view_confidences=predictions['confidences']
-                         )
+    # BLACK-LITTERMAN PORTFOLIO OPTIMIZATION AND ALLOCATION
+    # Get views and confidences
+    predictions = preds_data.set_index('date')
+    # Annualized returns for allocation
+    predictions.loc[:, 'views'] = (predictions['predictions'])**12 - 1
+    # Set confidence level
+    predictions.loc[:, 'confidences'] = confidence
+    # Make dict for views
+    viewdict = predictions[['ticker', 'views']].reset_index(drop=True).set_index('ticker').to_dict()
 
-#%% Posterior estimate of returns
-ret_bl = bl.bl_returns()
-S_bl = bl.bl_cov()
+    # Make Black-Litterman
+    bl = BlackLittermanModel(cov_matrix=S,
+                             absolute_views=viewdict['views'],
+                             omega="idzorek",
+                             view_confidences=predictions['confidences']
+                             )
+    # Posterior estimate of returns
+    ret_bl = bl.bl_returns()
+    S_bl = bl.bl_cov()
+    # Portfolio allocation
+    ef = EfficientFrontier(ret_bl, S_bl)
+    ef.add_objective(objective_functions.L2_reg)
+    ef.max_sharpe()
+    weights = ef.clean_weights()
+    # Make weights as dataframe
+    weights = pd.merge(pd.DataFrame(weights.keys()), pd.DataFrame(weights.values()),
+                       how='left',
+                       left_index=True,
+                       right_index=True).rename(columns={'0_x': 'ticker', '0_y': 'weights'})
 
-#%% Portfolio allocation
-ef = EfficientFrontier(ret_bl, S_bl)
-ef.add_objective(objective_functions.L2_reg)
-ef.max_sharpe()
-weights = ef.clean_weights()
-# Make weights as dataframe
-weights = pd.merge(pd.DataFrame(weights.keys()), pd.DataFrame(weights.values()),
-                   how='left',
-                   left_index=True,
-                   right_index=True).rename(columns={'0_x': 'tickers', '0_y': 'weights'})
+    # CALCULATE PORTFOLIO PERFORMANCE
+    # Join weights to date and price data
+    results_df = pd.merge(weights, preds_data, how='left', left_on='ticker', right_on='ticker')
+    # Merge schedule with results
+    results_df2 = pd.merge(results_df, schedule_join,
+                           how='left',
+                           left_on='date',
+                           right_on='month_end_date',
+                           validate='m:1')
+
+    # Merge with prices for month ahead dates
+    results_df3 = pd.merge(results_df2, price_data, how='left', left_on=['ticker', 'period_start_date'],
+                           right_on=['ticker', 'date'])
+    results_df3 = pd.merge(results_df3,
+                           price_data,
+                           how='left',
+                           left_on=['ticker', 'simfinid', 'comp_name', 'period_end_date'],
+                           right_on=['ticker', 'simfinid', 'comp_name', 'date'])
+
+    # Select columns
+    results_df4 = results_df3[['simfinid', 'comp_name', 'ticker', 'weights', 'month_end_date', 'period_start_date',
+                               'period_end_date', 'open_x', 'open_y']].rename(columns={'open_x': 'open_start_date',
+                                                                                       'open_y': 'open_end_date'})
+
+    # Create initial portfolio amount column
+    results_df4.loc[:, 'portfolio_amount'] = initial_amount
+    # Create weighted amounts
+    results_df4.loc[:, 'begin_dollar_amount'] = results_df4.loc[:, 'weights'] * results_df4.loc[:, 'portfolio_amount']
+    results_df4.loc[:, 'begin_dollar_amount'] = results_df4['begin_dollar_amount'].astype(float)
+    # Calculate shares held
+    results_df4.loc[:, 'shares_held'] = (results_df4.loc[:, 'begin_dollar_amount'] /
+                                         results_df4.loc[:, 'open_start_date'])
+    # Calculate period end dollar amount
+    results_df4.loc[:, 'end_dollar_amount'] = results_df4.loc[:, 'shares_held'] * results_df4.loc[:, 'open_end_date']
+    results_df4.loc[:, 'end_dollar_amount'] = results_df4['end_dollar_amount'].astype(float)
+    # AGGREGATE RESULTS
+    final_results = pd.DataFrame(results_df4.agg({'period_start_date': 'mean',
+                                                  'period_end_date': 'mean',
+                                                  'begin_dollar_amount': 'sum',
+                                                  'end_dollar_amount': 'sum'})
+                                 ).T
+    # Create return column
+    final_results.loc[:, 'period_return'] = (final_results['end_dollar_amount'] /
+                                             final_results['begin_dollar_amount'])
+
+    # Append to dataframe
+    results = pd.concat([results, final_results])
+    # Carry end_dollar_amount
+    initial_amount = float(final_results['end_dollar_amount'].astype(float).values)
 
 
 #%% PLOTTING
@@ -225,3 +294,13 @@ plt.show()
 #%% Plot weights
 plotting.plot_weights(weights=weights)
 plt.show()
+
+#%% PORTFOLIO OPTIMIZATION VIEW ##
+# Get backtesting results
+backtesting_results = pd.read_parquet(
+    'C:/Users/damko/PycharmProjects/Equity_Investing/investing/data/08_reporting/backtesting_results_data.parquet'
+)
+
+#%%
+backtesting_results.loc[:, 'rolling_returns'] = backtesting_results['period_return']\
+    .rolling(window=len(backtesting_results), min_periods=1).apply(np.prod)

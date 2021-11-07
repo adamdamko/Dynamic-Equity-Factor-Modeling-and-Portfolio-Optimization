@@ -122,6 +122,17 @@ performance_summary_data:
   filepath: data/07_model_output/performance_summary_data.parquet
 
 
+################################################# REPORTING DATA #######################################################
+# Market dates for portfolio optimization and backtesting
+market_dates_data:
+  type: pandas.ParquetDataSet
+  filepath: data/08_reporting/market_dates_data.parquet
+
+backtesting_results_data:
+  type: pandas.ParquetDataSet
+  filepath: data/08_reporting/backtesting_results_data.parquet
+
+
 ########################################################################################################################
 ########################################### Not Saved, Old or Other Formats ############################################
 ########################################################################################################################
