@@ -36,6 +36,7 @@ from equity_investing.pipelines import models_ml_exploratory as me
 from equity_investing.pipelines import models_ml_final as mf
 from equity_investing.pipelines import models_ml_holdout_eval as mhe
 from equity_investing.pipelines import portfolio_backtesting as pb
+from equity_investing.pipelines import production as prod
 
 
 # Run the registry
@@ -55,6 +56,7 @@ def register_pipelines() -> Dict[str, Pipeline]:
     fine_hyperparameter_tuning_pipeline = mf.create_fine_hyperparameter_tuning_pipeline()
     model_holdout_testing_results_pipeline = mhe.create_holdout_validation_pipeline()
     portfolio_backtesting_pipeline = pb.portfolio_backtesting_pipeline()
+    production_results_pipeline = prod.production_pipeline()
 
     return {
         # Individual pipelines
@@ -68,12 +70,14 @@ def register_pipelines() -> Dict[str, Pipeline]:
         "fine_hyperparameter_tuning": fine_hyperparameter_tuning_pipeline,
         "model_holdout_testing_results": model_holdout_testing_results_pipeline,
         "portfolio_backtesting": portfolio_backtesting_pipeline,
+        "production_results": production_results_pipeline,
 
 
         # PIPELINES FOR EXECUTION
         # Default pipeline
         "__default__": data_processing_pipeline + feature_engineering_pipeline + train_test_split_pipeline +
-                       model_holdout_testing_results_pipeline + portfolio_backtesting_pipeline,
+                       model_holdout_testing_results_pipeline + portfolio_backtesting_pipeline +
+                       production_results_pipeline,
         # EDA pipelines
         "raw_eda": data_processing_pipeline + raw_data_eda_pipeline,
         "full_eda": data_processing_pipeline + raw_data_eda_pipeline + feature_engineering_pipeline +

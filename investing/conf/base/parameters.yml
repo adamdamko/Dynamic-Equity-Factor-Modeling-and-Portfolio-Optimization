@@ -128,7 +128,8 @@ modeling_data_drop_list:
 
 # Current Date
 # Last end-of-month date available in data set (e.g. if it is 11/1/21 then current_date is 10/29/21)
-# This date must be a valid trading date for the NYSE
+# This date must be a valid trading date for the NYSE.
+# This date is the last date used for hyperparameter tuning and not for production.
 current_date: '2021-10-29'
 
 # Date to split train/validation sets from the final holdout set.
@@ -245,15 +246,18 @@ lgbm_static_params:
 ## LIGHTGBM COARSE TUNING
 # LightGBM: coarse tuning parameters
 lgbm_coarse_tune_params:
-    lgbm_model__n_estimators: [ 40, 60, 80, 100, 120, 140, 160, 180, 200, 220, 240, 260, 280, 300, 320, 340, 360,
-                                380, 400, 420, 440, 460, 480, 500]
-    lgbm_model__learning_rate: [ 0.0005, 0.0006, 0.0007, 0.0008, 0.0009, 0.001, 0.002, 0.005, 0.01,
+    lgbm_model__n_estimators: [ 50,   82,  115,  148,  181,  213,  246,  279,  312,  344,  377,
+                                410,  443,  475,  508,  541,  574,  606,  639,  672,  705,  737,
+                                770,  803,  836,  868,  901,  934,  967, 1000 ]
+    lgbm_model__learning_rate: [ 0.0004, 0.0005, 0.0006, 0.0007, 0.0008, 0.0009, 0.001, 0.002, 0.005, 0.01,
                                  0.012, 0.013, 0.015, 0.017, 0.018, 0.02 ]
-    lgbm_model__max_depth: [ 2, 3, 4, 5, 6, 7, 8, 9, 10 ]
-    lgbm_model__num_leaves: [ 4, 8, 16, 32, 64, 128, 256, 512, 1024 ]
-    lgbm_model__min_data_in_leaf: [ 20, 40, 60, 80, 100, 125, 150, 175, 200, 222, 245, 268, 291, 314, 337, 360,
-                                    383, 406, 429, 452, 475, 500, 750, 1000, 1500, 2000, 2500, 3000, 3500, 4000,
-                                    4500, 5000 ]
+    lgbm_model__max_depth: [ 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20 ]
+    lgbm_model__num_leaves: [ 4,   72,  141,  210,  279,  348,  416,  485,  554,  623,  692,
+                              761,  829,  898,  967, 1036, 1105, 1174, 1242, 1311, 1380, 1449,
+                              1518, 1587, 1655, 1724, 1793, 1862, 1931, 2000 ]
+    lgbm_model__min_data_in_leaf: [ 50,  151,  253,  355,  456,  558,  660,  762,  863,  965, 1067,
+                                    1168, 1270, 1372, 1474, 1575, 1677, 1779, 1881, 1982, 2084, 2186,
+                                    2287, 2389, 2491, 2593, 2694, 2796, 2898, 3000 ]
 
 
 ## LIGHTGBM FINE-TUNING
@@ -273,11 +277,11 @@ lgbm_fine_tune_params:
 ### Model Best Hyperparameters ###
 ## LightGBM best fine-tuning parameters (modified slightly from tuning) ##
 lgbm_fine_best_params:
-    n_estimators: 250
-    learning_rate: 0.0006
-    max_depth: 7
-    num_leaves: 80
-    min_data_in_leaf: 5000
+    n_estimators: 750  # 344
+    learning_rate: 0.0004  # 0.0007
+    max_depth: 6  # 3
+    num_leaves: 64  # 6
+    min_data_in_leaf: 950  # 903
     boosting_type: 'dart'
     n_jobs: 23
     random_state: 638552
@@ -289,7 +293,7 @@ lgbm_fine_best_params:
 ###################################### MODELS_ML_HOLDOUT_EVAL PARAMETERS ###############################################
 # Monthly dates to loop through for validation. Train on everything less than each date and predict on next date's data.
 # Use 'LightGBM best fine-tuning parameters' parameter
-# This replicates real-world use.
+# This replicates real-world use and can be updated.
 # Train dates
 validation_train_dates_list: [ '2020-02-01', '2020-03-01', '2020-04-01', '2020-05-01', '2020-06-01', '2020-07-01',
                                '2020-08-01', '2020-09-01', '2020-10-01', '2020-11-01', '2020-12-01', '2021-01-01',
@@ -304,10 +308,12 @@ validation_test_dates_list: [ '2020-03-01', '2020-04-01', '2020-05-01', '2020-06
 
 
 
+
 ####################################### PORTFOLIO_BACKTESTING PARAMETERS ###############################################
 # The last date of the market schedule. This date should be three months beyond the last prediction date.
 # It should be an end-of-calendar-month value. (E.g., if the last prediction date is 2021-09-30 then the
 # schedule_end_date would be 2021-12-31).
+# This can be updated.
 schedule_end_date: '2021-12-31'
 
 # Date of last prediction. (E.g., if you are predicting for the month of 2021-10 ending 2021-10-29,
@@ -320,6 +326,36 @@ initial_portfolio_value: 100000
 # Confidence level in Black-Litterman optimization (note: this could be different for all stock predictions, but
 # as this is algorithmic, I do not have any reason to have more/less confidence in any given prediction).
 confidence_level: 0.9
+
+
+
+
+############################################## PRODUCTION PARAMETERS ###################################################
+# Monthly dates to loop through for production (likely just one date).
+# Train on everything less than each date and predict on next date's data.
+# Use 'LightGBM best fine-tuning parameters' parameter
+# This is to be used for real-world investments.
+# These dates need to be adjusted every month.
+
+# Train dates
+production_train_date: '2021-10-01'
+
+# Test dates
+production_test_date: '2021-11-01'
+
+# The first date of the production market schedule. This date should be the first day of the month before production
+# prediction. It should be a beginning-of-calendar-month value. (E.g., if the last prediction date is 2021-10-29
+# then the production_start_date would be 2021-10-01).
+production_start_date: '2021-10-01'
+
+# The last date of the production market schedule. This date should be three months beyond the last prediction date.
+# It should be an end-of-calendar-month value. (E.g., if the last prediction date is 2021-10-29 then the
+# production_end_date would be 2022-01-31).
+production_end_date: '2022-01-31'
+
+# Date of last prediction. (E.g., if you are predicting for the month of 2021-10 ending 2021-10-29,
+# the last_production_date would be the last trading day of the prior month, 2021-09-30 in this case).
+last_production_date: '2021-10-29'
 
 
 
