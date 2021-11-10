@@ -23,12 +23,10 @@ import lightgbm as lgb
 import matplotlib.pyplot as plt
 from typing import Dict
 from sklearn.model_selection import RandomizedSearchCV
+from sklearn.model_selection import GridSearchCV
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.compose import TransformedTargetRegressor
-from sklearn.metrics import mean_absolute_percentage_error
-from sklearn.metrics import mean_squared_error
-from sklearn.metrics import median_absolute_error
 
 
 class TrainTestValidation:
@@ -164,8 +162,8 @@ class HyperparameterTuning:
     to optimize hyperparameters for the LightGBM model.
     """
     @staticmethod
-    def train_cv_lgbm(train_x_data: pd.DataFrame, train_y_data: pd.DataFrame, time_series_split_list: list,
-                      params_static: Dict, params: Dict, params_features: Dict):
+    def train_cv_lgbm_coarse(train_x_data: pd.DataFrame, train_y_data: pd.DataFrame, time_series_split_list: list,
+                             params_static: Dict, params: Dict, params_features: Dict):
         """
         This performs cross-validation for hyperparameter tuning.
 
@@ -194,7 +192,6 @@ class HyperparameterTuning:
         # LIGHTGBM PIPELINE
         # Instantiate regressor
         lgbm = lgb.LGBMRegressor(boosting_type=params_static['boosting_type'],
-                                 extra_trees=params_static['extra_trees'],
                                  n_jobs=params_static['n_jobs']
                                  )
 
@@ -216,6 +213,64 @@ class HyperparameterTuning:
                                                                         verbose=10,
                                                                         refit=True
                                                                         ),
+                                                     transformer=StandardScaler()
+                                                     )
+        # Fit the estimator
+        lgbm_randomized.fit(X_train, y_train)  # categorical_feature is auto
+
+        return lgbm_randomized
+
+    @staticmethod
+    def train_cv_lgbm_fine(train_x_data: pd.DataFrame, train_y_data: pd.DataFrame, time_series_split_list: list,
+                           params_static: Dict, params: Dict, params_features: Dict):
+        """
+        This performs cross-validation for hyperparameter tuning.
+
+        Args:
+            train_x_data:
+            train_y_data:
+            time_series_split_list:
+            params_static: Static parameters defined in parameters.yml
+            params: Parameters defined in parameters.yml
+            params_features: model train features
+
+        Returns:
+            Model object.
+
+        """
+        # Make categorical vars as pd.Categorical
+        X_train = train_x_data.copy()
+        y_train = train_y_data.copy()
+        tscv = time_series_split_list.copy()
+        # Get features
+        X_train = X_train[params_features]
+        # Train X data
+        X_train.loc[:, 'sector'] = X_train.loc[:, 'sector'].astype('category')
+        X_train.loc[:, 'market_cap_cat'] = X_train.loc[:, 'market_cap_cat'].astype('category')
+
+        # LIGHTGBM PIPELINE
+        # Instantiate regressor
+        lgbm = lgb.LGBMRegressor(boosting_type=params_static['boosting_type'],
+                                 n_jobs=params_static['n_jobs']
+                                 )
+
+        # Create the parameter dictionary: params
+        lgbm_param_grid = params
+
+        # Setup the pipeline steps: steps
+        lgbm_steps = [("lgbm_model", lgbm)]
+
+        # Create the pipeline: xgb_pipeline
+        lgbm_pipeline = Pipeline(lgbm_steps)
+
+        # Perform random search: grid_mae
+        lgbm_randomized = TransformedTargetRegressor(GridSearchCV(estimator=lgbm_pipeline,
+                                                                  param_grid=lgbm_param_grid,
+                                                                  scoring=params_static['scoring'],
+                                                                  cv=tscv,
+                                                                  verbose=10,
+                                                                  refit=True
+                                                                  ),
                                                      transformer=StandardScaler()
                                                      )
         # Fit the estimator

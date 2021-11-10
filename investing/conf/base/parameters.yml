@@ -239,7 +239,7 @@ lgbm_static_params:
     boosting_type: 'dart'
     extra_trees: False
     n_jobs: 23
-    n_iter: 400
+    n_iter: 1000
     scoring: 'neg_root_mean_squared_error'
 
 
@@ -249,39 +249,33 @@ lgbm_coarse_tune_params:
     lgbm_model__n_estimators: [ 50,   82,  115,  148,  181,  213,  246,  279,  312,  344,  377,
                                 410,  443,  475,  508,  541,  574,  606,  639,  672,  705,  737,
                                 770,  803,  836,  868,  901,  934,  967, 1000 ]
-    lgbm_model__learning_rate: [ 0.0004, 0.0005, 0.0006, 0.0007, 0.0008, 0.0009, 0.001, 0.002, 0.005, 0.01,
-                                 0.012, 0.013, 0.015, 0.017, 0.018, 0.02 ]
+    lgbm_model__learning_rate: [ 0.0004, 0.0005, 0.0006, 0.0007, 0.0008, 0.0009,
+                                 0.001, 0.002, 0.005, 0.001, 0.01 ]
     lgbm_model__max_depth: [ 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20 ]
-    lgbm_model__num_leaves: [ 4,   72,  141,  210,  279,  348,  416,  485,  554,  623,  692,
-                              761,  829,  898,  967, 1036, 1105, 1174, 1242, 1311, 1380, 1449,
-                              1518, 1587, 1655, 1724, 1793, 1862, 1931, 2000 ]
-    lgbm_model__min_data_in_leaf: [ 50,  151,  253,  355,  456,  558,  660,  762,  863,  965, 1067,
-                                    1168, 1270, 1372, 1474, 1575, 1677, 1779, 1881, 1982, 2084, 2186,
-                                    2287, 2389, 2491, 2593, 2694, 2796, 2898, 3000 ]
+    lgbm_model__num_leaves: [ 4, 6, 8, 16, 32, 64, 128, 256, 386, 512, 1024, 2048, 4096, 8192 ]
+    lgbm_model__min_data_in_leaf: [ 50,  134,  218,  303,  387,  472,  556,  641,  725,  810,  894,
+                                    979, 1063, 1148, 1232, 1317, 1401, 1486, 1570, 1655, 1739, 1824,
+                                    1908, 1993, 2077, 2162, 2246, 2331, 2415, 2500 ]
 
 
 ## LIGHTGBM FINE-TUNING
 # LightGBM: fine-tuning parameters
 lgbm_fine_tune_params:
-    lgbm_model__n_estimators: [ 50,  56,  63,  70,  77,  84,  91,  98, 105, 112, 118, 125, 132,
-                                139, 146, 153, 160, 167, 174, 181, 187, 194, 201, 208, 215, 222,
-                                229, 236, 243, 250 ]
-    lgbm_model__learning_rate: [ 0.0006, 0.0007, 0.0008, 0.0009, 0.001, 0.002 ]
-    lgbm_model__max_depth: [ 2, 3, 4, 5, 6, 7, 8, 9, 10 ]
-    lgbm_model__num_leaves: [ 4, 8, 16, 32, 64, 128, 256, 512, 1024 ]
-    lgbm_model__min_data_in_leaf: [ 2000, 2103, 2206, 2310, 2413, 2517, 2620, 2724, 2827, 2931, 3034,
-                                    3137, 3241, 3344, 3448, 3551, 3655, 3758, 3862, 3965, 4068, 4172,
-                                    4275, 4379, 4482, 4586, 4689, 4793, 4896, 5000 ]
+    lgbm_model__n_estimators: [ 250, 350, 450, 550, 650, 750 ]
+    lgbm_model__learning_rate: [ 0.0004, 0.0005, 0.0006, 0.0007 ]
+    lgbm_model__max_depth: [ 3, 4, 5, 6, 7, 8, 9, 10 ]
+    lgbm_model__num_leaves: [ 4, 6, 8, 16, 32, 64, 128, 256 ]
+    lgbm_model__min_data_in_leaf: [ 150, 250, 750, 850, 950 ]
 
 
 ### Model Best Hyperparameters ###
 ## LightGBM best fine-tuning parameters (modified slightly from tuning) ##
 lgbm_fine_best_params:
-    n_estimators: 750  # 344
-    learning_rate: 0.0004  # 0.0007
-    max_depth: 6  # 3
-    num_leaves: 64  # 6
-    min_data_in_leaf: 950  # 903
+    n_estimators: 750
+    learning_rate: 0.0004
+    max_depth: 6
+    num_leaves: 64
+    min_data_in_leaf: 950
     boosting_type: 'dart'
     n_jobs: 23
     random_state: 638552
@@ -313,7 +307,7 @@ validation_test_dates_list: [ '2020-03-01', '2020-04-01', '2020-05-01', '2020-06
 # The last date of the market schedule. This date should be three months beyond the last prediction date.
 # It should be an end-of-calendar-month value. (E.g., if the last prediction date is 2021-09-30 then the
 # schedule_end_date would be 2021-12-31).
-# This can be updated.
+# This can be updated with new dates through time.
 schedule_end_date: '2021-12-31'
 
 # Date of last prediction. (E.g., if you are predicting for the month of 2021-10 ending 2021-10-29,
@@ -336,6 +330,10 @@ confidence_level: 0.9
 # Use 'LightGBM best fine-tuning parameters' parameter
 # This is to be used for real-world investments.
 # These dates need to be adjusted every month.
+# E.g., if you are predicting for the month of 2021-11, you will train on data through 2021-09-30 as this is the
+# last full month for which you have a target value. So production_train_date would be 2021-10-01 (as you want all data
+# less than this date) and production_test_date would be 2021-11-01 (as your test set will be all monthly data greater
+# than 2021-10-01 and less than 2021-11-01).
 
 # Train dates
 production_train_date: '2021-10-01'
