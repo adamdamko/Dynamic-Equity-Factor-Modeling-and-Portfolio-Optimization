@@ -215,7 +215,7 @@ initial_performance_summary = pd.read_parquet(
 # Get initial backtesting results
 initial_backtesting_results = pd.read_parquet(
     'C:/Users/damko/PycharmProjects/Equity_Investing/investing/data/08_reporting/'
-    'Initial_backtesting_results_data.parquet'
+    'Initial_backtesting_results.parquet'
 )
 
 #%% LATEST RESULTS ##
