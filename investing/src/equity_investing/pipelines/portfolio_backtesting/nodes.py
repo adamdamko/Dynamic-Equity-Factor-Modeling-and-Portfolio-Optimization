@@ -41,7 +41,7 @@ class PortfolioBacktesting:
         # Get NYSE calendar
         nyse = mcal.get_calendar('NYSE')
         # Get date schedule
-        schedule = nyse.schedule(start_date='2020-02-28', end_date=schedule_end_date)
+        schedule = nyse.schedule(start_date='2020-02-01', end_date=schedule_end_date)
         # Get month end
         schedule['year'] = schedule['market_close'].dt.year
         schedule['month'] = schedule['market_close'].dt.month
@@ -186,5 +186,9 @@ class PortfolioBacktesting:
             results = pd.concat([results, final_results])
             # Carry end_dollar_amount
             initial_amount = float(final_results['end_dollar_amount'].astype(float).values)
+
+        # Create rolling returns
+        results.loc[:, 'rolling_returns'] = results['period_return']\
+            .rolling(window=len(results), min_periods=1).apply(np.prod)
 
         return results

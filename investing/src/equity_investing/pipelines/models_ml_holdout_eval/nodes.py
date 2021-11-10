@@ -11,9 +11,6 @@ from sklearn.model_selection import RandomizedSearchCV
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.compose import TransformedTargetRegressor
-from sklearn.metrics import mean_absolute_percentage_error
-from sklearn.metrics import mean_squared_error
-from sklearn.metrics import median_absolute_error
 
 
 class HoldoutValidation:
@@ -27,7 +24,7 @@ class HoldoutValidation:
                    validation_test_dates_list: Dict, lgbm_fine_best_params: Dict,
                    model_features: Dict, model_target: Dict) -> pd.DataFrame:
         """
-        This function creates the target train/test variable.
+        This function trains and tests on the holdout data set.
 
         Args:
             modeling_data: Output from 'feature_engineering' pipeline.
@@ -89,14 +86,14 @@ class HoldoutValidation:
 
             # LIGHTGBM MODEL
             lgb_model = TransformedTargetRegressor(lgb.LGBMRegressor(
-                                                                n_estimators=lgbm_fine_best_params['n_estimators'],
-                                                                learning_rate=lgbm_fine_best_params['learning_rate'],
-                                                                max_depth=lgbm_fine_best_params['max_depth'],
-                                                                num_leaves=lgbm_fine_best_params['num_leaves'],
-                                                                min_data_in_leaf=lgbm_fine_best_params['num_leaves'],
-                                                                boosting_type=lgbm_fine_best_params['boosting_type'],
-                                                                n_jobs=lgbm_fine_best_params['n_jobs'],
-                                                                random_state=lgbm_fine_best_params['random_state']
+                n_estimators=lgbm_fine_best_params['n_estimators'],
+                learning_rate=lgbm_fine_best_params['learning_rate'],
+                max_depth=lgbm_fine_best_params['max_depth'],
+                num_leaves=lgbm_fine_best_params['num_leaves'],
+                min_data_in_leaf=lgbm_fine_best_params['min_data_in_leaf'],
+                boosting_type=lgbm_fine_best_params['boosting_type'],
+                n_jobs=lgbm_fine_best_params['n_jobs'],
+                random_state=lgbm_fine_best_params['random_state']
             ),
                 transformer=StandardScaler()
             )
@@ -126,7 +123,7 @@ class HoldoutValidation:
     @staticmethod
     def top_predictions_view(holdout_results_data: pd.DataFrame) -> pd.DataFrame:
         """
-        This function creates the target train/test variable.
+        This function creates a view of the top 100 predictions by date.
 
         Args:
             holdout_results_data: Results of holdout data testing.
@@ -149,7 +146,8 @@ class HoldoutValidation:
     @staticmethod
     def performance_summary(holdout_results_data: pd.DataFrame) -> pd.DataFrame:
         """
-        This function creates the target train/test variable.
+        This function creates a view of the performance of an equally weighted portfolio of
+        the top picks over time.
 
         Args:
             holdout_results_data: Results of holdout data testing.

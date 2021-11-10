@@ -122,15 +122,36 @@ performance_summary_data:
   filepath: data/07_model_output/performance_summary_data.parquet
 
 
+
 ################################################# REPORTING DATA #######################################################
 # Market dates for portfolio optimization and backtesting
 market_dates_data:
   type: pandas.ParquetDataSet
   filepath: data/08_reporting/market_dates_data.parquet
 
+# Backtesting results
 backtesting_results_data:
   type: pandas.ParquetDataSet
   filepath: data/08_reporting/backtesting_results_data.parquet
+
+## PRODUCTION DATA ##
+# Production prediction results
+production_predictions_data:
+  type: pandas.ParquetDataSet
+  filepath: data/08_reporting/production_predictions_data.parquet
+
+# Production dates
+production_dates_data:
+  type: pandas.ParquetDataSet
+  filepath: data/08_reporting/production_dates_data.parquet
+
+# Production results
+production_results_data:
+  type: pandas.ParquetDataSet
+  filepath: data/08_reporting/production_results_data.parquet
+
+
+
 
 
 ########################################################################################################################
