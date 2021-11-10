@@ -39,7 +39,7 @@ def create_coarse_hyperparameter_tuning_pipeline(**kwargs):
     return Pipeline(
         [
             node(
-                func=HyperparameterTuning.train_cv_lgbm,
+                func=HyperparameterTuning.train_cv_lgbm_coarse,
                 inputs=['train_x_data', 'train_y_data', 'time_series_split_list', 'params:lgbm_static_params',
                         'params:lgbm_coarse_tune_params', 'params:model_features'],
                 outputs='lgbm_coarse_cv_model',
@@ -59,7 +59,7 @@ def create_fine_hyperparameter_tuning_pipeline(**kwargs):
     return Pipeline(
         [
             node(
-                func=HyperparameterTuning.train_cv_lgbm,
+                func=HyperparameterTuning.train_cv_lgbm_fine,
                 inputs=['train_x_data', 'train_y_data', 'time_series_split_list', 'params:lgbm_static_params',
                         'params:lgbm_fine_tune_params', 'params:model_features'],
                 outputs='lgbm_fine_cv_model',

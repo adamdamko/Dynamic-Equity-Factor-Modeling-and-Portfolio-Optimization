@@ -139,10 +139,10 @@ lgbm_halve_coarse_param_grid = {'lgbm_model__n_estimators': [50, 70, 90, 120, 15
                                 'lgbm_model__num_leaves': [4, 6, 8, 12, 16, 24, 32, 64, 128, 256, 386, 424,
                                                            512, 728, 934,  1024, 1276, 1454, 1687, 1892, 2048,
                                                            4096, 8192],
-                                'lgbm_model__min_data_in_leaf': [20, 30, 40, 50, 70, 90, 120, 150, 175, 200, 250, 300,
-                                                                 350, 400, 450, 500, 550, 600, 650, 700, 750, 800, 850,
-                                                                 900, 950, 1000, 1100, 1200, 1300, 1400, 1500, 1600,
-                                                                 1700, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500]
+                                'lgbm_model__min_data_in_leaf': [150, 175, 200, 250, 300, 350, 400, 450, 500, 550,
+                                                                 600, 650, 700, 750, 800, 850, 900, 950, 1000, 1100,
+                                                                 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900,
+                                                                 2000, 2100, 2200, 2300, 2400, 2500]
                                 }
 
 # Setup the pipeline steps: steps
@@ -155,7 +155,7 @@ lgbm_halve_coarse_pipeline = Pipeline(lgbm_halve_coarse_steps)
 lgbm_halve_coarse_search = TransformedTargetRegressor(HalvingRandomSearchCV(
     estimator=lgbm_halve_coarse_pipeline,
     param_distributions=lgbm_halve_coarse_param_grid,
-    n_candidates=250,
+    n_candidates=1000,
     factor=2,
     min_resources='exhaust',
     scoring='neg_root_mean_squared_error',
@@ -205,39 +205,43 @@ param_list = ['param_lgbm_model__n_estimators',
 for param in param_list:
     visualize_hyperparameter(param)
 
-#%% Write cv results
-lgbm_cv_results_fine.to_parquet(
-    'C:/Users/damko/PycharmProjects/Equity_Investing/investing/data/06_models/lgbm_cv_results_fine.parquet'
-)
 
-#%% View output results
-holdout_results_data = pd.read_parquet(
+#%% INITIAL RESULTS ##
+# Get initial performance summary
+initial_performance_summary = pd.read_parquet(
     'C:/Users/damko/PycharmProjects/Equity_Investing/investing/data/07_model_output/'
-    'holdout_results_data.parquet'
+    'Initial_performance_summary_data.parquet'
+)
+# Get initial backtesting results
+initial_backtesting_results = pd.read_parquet(
+    'C:/Users/damko/PycharmProjects/Equity_Investing/investing/data/08_reporting/'
+    'Initial_backtesting_results_data.parquet'
 )
 
+#%% LATEST RESULTS ##
+# Get performance summary
 performance_summary = pd.read_parquet(
     'C:/Users/damko/PycharmProjects/Equity_Investing/investing/data/07_model_output/'
     'performance_summary_data.parquet'
 )
-
-top_predictions_data = pd.read_parquet(
-    'C:/Users/damko/PycharmProjects/Equity_Investing/investing/data/07_model_output/'
-    'top_predictions_view_data.parquet'
-)
-
-#%% PORTFOLIO OPTIMIZATION VIEW ##
 # Get backtesting results
 backtesting_results = pd.read_parquet(
     'C:/Users/damko/PycharmProjects/Equity_Investing/investing/data/08_reporting/backtesting_results_data.parquet'
 )
-
-#%% PORTFOLIO OPTIMIZATION VIEW ##
 # Get backtesting results
 results = pd.read_parquet(
     'C:/Users/damko/PycharmProjects/Equity_Investing/investing/data/08_reporting/production_results_data.parquet'
 )
-
+# Get predictions
 predictions = pd.read_parquet(
     'C:/Users/damko/PycharmProjects/Equity_Investing/investing/data/08_reporting/production_predictions_data.parquet'
+)
+#%% LOOK AT DATES ##
+# Get production dates
+production_dates = pd.read_parquet(
+    'C:/Users/damko/PycharmProjects/Equity_Investing/investing/data/08_reporting/production_dates_data.parquet'
+)
+# Get train dates
+backtest_dates = pd.read_parquet(
+    'C:/Users/damko/PycharmProjects/Equity_Investing/investing/data/08_reporting/market_dates_data.parquet'
 )
