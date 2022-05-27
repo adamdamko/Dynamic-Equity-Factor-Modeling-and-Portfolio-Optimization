@@ -24,7 +24,7 @@ The application will take basic data inputs and perform the following:
 6. Portfolio backtesting.
 7. Output of selected securities and weights for a long-only portfolio.
 
-This application is robuts enough to create a real world portfolio, 
+This application is robust enough to create a real world portfolio, 
 but not overly complex and does not require a large amount of expensive data.
 The author hopes others can take this project and build on it with different modeling techniques,
 different portfolio optimization techniques, new data, and new feature engineering.
